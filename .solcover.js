@@ -6,10 +6,8 @@ module.exports = {
   matrixOutputPath: './coverage/testMatrix.json',
   mochaJsonOutputPath: './coverage/mochaOutput.json',
   skipFiles: [
-    'bridge-adapters/ExchangeStargateAdapter.sol',
-    'bridge-adapters/ExchangeStargateV2Adapter.sol',
+    'bridge-adapters/ExchangeLayerZeroAdapter.sol',
     'test/OraclePriceAdapterMock.sol',
-    'test/StargateRouterMock.sol',
     'test/StargateV2PoolMock.sol',
     'util/ExchangeWalletStateAggregator.sol',
   ],

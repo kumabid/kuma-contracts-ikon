@@ -4,9 +4,9 @@ import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import { ethers, network } from 'hardhat';
 
 import type {
-  Exchange_v4,
+  Exchange_v1,
   Governance,
-  IDEXIndexAndOraclePriceAdapter,
+  KumaIndexAndOraclePriceAdapter,
   LiquidationValidationsMock,
   USDC,
 } from '../typechain-types';
@@ -30,11 +30,11 @@ import {
 } from './helpers';
 
 describe('Exchange', function () {
-  let exchange: Exchange_v4;
+  let exchange: Exchange_v1;
   let exitFundWallet: SignerWithAddress;
   let governance: Governance;
   let indexPrice: IndexPrice;
-  let indexPriceAdapter: IDEXIndexAndOraclePriceAdapter;
+  let indexPriceAdapter: KumaIndexAndOraclePriceAdapter;
   let indexPriceServiceWallet: SignerWithAddress;
   let insuranceFundWallet: SignerWithAddress;
   let liquidationValidationsMock: LiquidationValidationsMock;

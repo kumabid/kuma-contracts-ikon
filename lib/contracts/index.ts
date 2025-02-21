@@ -7,11 +7,10 @@ import ChainlinkAggregator from './ChainlinkAggregator';
 import CustodianContract from './CustodianContract';
 import EarningsEscrowContract from './EarningsEscrow';
 import ExchangeContract from './ExchangeContract';
-import ExchangeStargateAdapterContract from './ExchangeStargateAdapterContract';
-import ExchangeStargateV2AdapterContract from './ExchangeStargateV2AdapterContract';
+import ExchangeLayerZeroAdapterContract from './ExchangeLayerZeroAdapterContract';
 import ExchangeWalletStateAggregatorContract from './ExchangeWalletStateAggregatorContract';
 import GovernanceContract from './GovernanceContract';
-import IDEXIndexAndOraclePriceAdapterContract from './IDEXIndexAndOraclePriceAdapterContract';
+import KumaIndexAndOraclePriceAdapterContract from './KumaIndexAndOraclePriceAdapterContract';
 import PythIndexPriceAdapterContract from './PythIndexPriceAdapterContract';
 import PythOraclePriceAdapterContract from './PythOraclePriceAdapterContract';
 import StorkIndexAndOraclePriceAdapterContract from './StorkIndexAndOraclePriceAdapterContract';
@@ -25,11 +24,10 @@ export {
   CustodianContract,
   EarningsEscrowContract,
   ExchangeContract,
-  ExchangeStargateAdapterContract,
-  ExchangeStargateV2AdapterContract,
+  ExchangeLayerZeroAdapterContract,
   ExchangeWalletStateAggregatorContract,
   GovernanceContract,
-  IDEXIndexAndOraclePriceAdapterContract,
+  KumaIndexAndOraclePriceAdapterContract,
   PythIndexPriceAdapterContract,
   PythOraclePriceAdapterContract,
   StorkIndexAndOraclePriceAdapterContract,

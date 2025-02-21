@@ -2,7 +2,7 @@ import { v1 as uuidv1 } from 'uuid';
 import { ethers, network } from 'hardhat';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 
-import { Exchange_v4, USDC } from '../typechain-types';
+import { Exchange_v1, USDC } from '../typechain-types';
 import {
   decimalToPips,
   getTransferArguments,
@@ -17,7 +17,7 @@ import {
 } from './helpers';
 
 describe('Exchange', function () {
-  let exchange: Exchange_v4;
+  let exchange: Exchange_v1;
   let exitFundWallet: SignerWithAddress;
   let indexPriceServiceWallet: SignerWithAddress;
   let insuranceFundWallet: SignerWithAddress;

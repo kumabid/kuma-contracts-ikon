@@ -20,8 +20,8 @@ import {
   Trade,
 } from '../lib';
 import type {
-  Exchange_v4,
-  IDEXIndexAndOraclePriceAdapter,
+  Exchange_v1,
+  KumaIndexAndOraclePriceAdapter,
   USDC,
 } from '../typechain-types';
 
@@ -29,9 +29,9 @@ describe('Exchange', function () {
   let buyOrder: Order;
   let buyOrderSignature: string;
   let dispatcherWallet: SignerWithAddress;
-  let exchange: Exchange_v4;
+  let exchange: Exchange_v1;
   let exitFundWallet: SignerWithAddress;
-  let indexPriceAdapter: IDEXIndexAndOraclePriceAdapter;
+  let indexPriceAdapter: KumaIndexAndOraclePriceAdapter;
   let indexPriceServiceWallet: SignerWithAddress;
   let insuranceFundWallet: SignerWithAddress;
   let ownerWallet: SignerWithAddress;

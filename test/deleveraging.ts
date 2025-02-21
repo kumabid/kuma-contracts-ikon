@@ -10,9 +10,9 @@ import {
 
 import type {
   ChainlinkAggregatorMock,
-  Exchange_v4,
+  Exchange_v1,
   Governance,
-  IDEXIndexAndOraclePriceAdapter,
+  KumaIndexAndOraclePriceAdapter,
   USDC,
 } from '../typechain-types';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
@@ -33,11 +33,11 @@ import {
 // TODO Partial deleveraging
 describe('Exchange', function () {
   let chainlinkAggregator: ChainlinkAggregatorMock;
-  let exchange: Exchange_v4;
+  let exchange: Exchange_v1;
   let exitFundWallet: SignerWithAddress;
   let governance: Governance;
   let indexPrice: IndexPrice;
-  let indexPriceAdapter: IDEXIndexAndOraclePriceAdapter;
+  let indexPriceAdapter: KumaIndexAndOraclePriceAdapter;
   let indexPriceServiceWallet: SignerWithAddress;
   let insuranceFundWallet: SignerWithAddress;
   let ownerWallet: SignerWithAddress;

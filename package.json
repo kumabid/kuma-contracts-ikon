@@ -1,9 +1,9 @@
 {
-  "name": "@idexio/idex-contracts-ikon",
+  "name": "@idexio/idex-contracts-ikon-kuma-rebrand",
   "version": "1.0.1",
-  "description": "Collects source code, tests, and documentation for the IDEX Ikon release Solidity contracts",
-  "homepage": "https://github.com/idexio/idex-contracts-ikon",
-  "repository": "https://github.com/idexio/idex-contracts-ikon",
+  "description": "Collects source code, tests, and documentation for the Kuma Solidity contracts",
+  "homepage": "https://github.com/idexio/idex-contracts-ikon-kuma-rebrand",
+  "repository": "https://github.com/idexio/idex-contracts-ikon-kuma-rebrand",
   "license": "MIT",
   "main": "build/lib/index.js",
   "types": "build/lib/index.d.ts",

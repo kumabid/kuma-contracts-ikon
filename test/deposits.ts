@@ -5,7 +5,7 @@ import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import { decimalToAssetUnits, decimalToPips, pipsToAssetUnits } from '../lib';
 import type {
   BalanceMigrationSourceMock,
-  Exchange_v4,
+  Exchange_v1,
   USDC,
 } from '../typechain-types';
 import {
@@ -18,7 +18,7 @@ import {
 
 describe('Exchange', function () {
   let balanceMigrationSource: BalanceMigrationSourceMock;
-  let exchange: Exchange_v4;
+  let exchange: Exchange_v1;
   let exitFundWallet: SignerWithAddress;
   let ownerWallet: SignerWithAddress;
   let traderWallet: SignerWithAddress;

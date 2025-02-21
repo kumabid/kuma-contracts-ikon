@@ -2,11 +2,11 @@ import { expect } from 'chai';
 import { ethers, network } from 'hardhat';
 
 import { deployAndAssociateContracts } from './helpers';
-import type { Exchange_v4 } from '../typechain-types';
+import type { Exchange_v1 } from '../typechain-types';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 
 describe('Exchange', function () {
-  let exchange: Exchange_v4;
+  let exchange: Exchange_v1;
   let ownerWallet: SignerWithAddress;
 
   before(async () => {

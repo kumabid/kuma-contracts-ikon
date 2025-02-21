@@ -3,8 +3,8 @@ import { ethers } from 'hardhat';
 
 import {
   BalanceMigrationSourceMock__factory,
-  Exchange_v4,
-  Exchange_v4__factory,
+  Exchange_v1,
+  Exchange_v1__factory,
   Governance,
   USDC,
 } from '../typechain-types';
@@ -18,7 +18,7 @@ import {
 describe('Exchange', function () {
   describe('deploy', async function () {
     let BalanceMigrationSourceMockFactory: BalanceMigrationSourceMock__factory;
-    let ExchangeFactory: Exchange_v4__factory;
+    let ExchangeFactory: Exchange_v1__factory;
     let usdc: USDC;
 
     beforeEach(async () => {
@@ -151,7 +151,7 @@ describe('Exchange', function () {
   });
 
   describe('field upgrade governance setters', () => {
-    let exchange: Exchange_v4;
+    let exchange: Exchange_v1;
 
     beforeEach(async () => {
       const [owner] = await ethers.getSigners();
@@ -213,8 +213,8 @@ describe('Exchange', function () {
   });
 
   describe('setCustodian', async function () {
-    let exchange: Exchange_v4;
-    let ExchangeFactory: Exchange_v4__factory;
+    let exchange: Exchange_v1;
+    let ExchangeFactory: Exchange_v1__factory;
     let governance: Governance;
     let usdc: USDC;
 
@@ -350,7 +350,7 @@ describe('Exchange', function () {
   });
 
   describe('removeDispatcher', async function () {
-    let exchange: Exchange_v4;
+    let exchange: Exchange_v1;
     let ownerWallet: SignerWithAddress;
 
     beforeEach(async () => {
@@ -381,7 +381,7 @@ describe('Exchange', function () {
   });
 
   describe('setDepositIndex', () => {
-    let exchange: Exchange_v4;
+    let exchange: Exchange_v1;
 
     beforeEach(async () => {
       const [owner] = await ethers.getSigners();

@@ -4,14 +4,14 @@ import * as utils from './utils';
 import BaseContract from './BaseContract';
 
 import {
-  ExchangeStargateAdapter,
-  ExchangeStargateAdapter__factory,
+  KumaIndexAndOraclePriceAdapter,
+  KumaIndexAndOraclePriceAdapter__factory,
 } from '../../typechain-types';
 
-export default class ExchangeStargateAdapterContract extends BaseContract<ExchangeStargateAdapter> {
+export default class KumaIndexAndOraclePriceAdapterContract extends BaseContract<KumaIndexAndOraclePriceAdapter> {
   public constructor(address: string, signerWalletPrivateKey?: string) {
     super(
-      ExchangeStargateAdapter__factory.connect(
+      KumaIndexAndOraclePriceAdapter__factory.connect(
         address,
         signerWalletPrivateKey
           ? new ethers.Wallet(signerWalletPrivateKey, utils.loadProvider())
@@ -21,22 +21,22 @@ export default class ExchangeStargateAdapterContract extends BaseContract<Exchan
   }
 
   public static async deploy(
-    args: Parameters<ExchangeStargateAdapter__factory['deploy']>,
+    args: Parameters<KumaIndexAndOraclePriceAdapter__factory['deploy']>,
     ownerWalletPrivateKey: string,
-  ): Promise<ExchangeStargateAdapterContract> {
+  ): Promise<KumaIndexAndOraclePriceAdapterContract> {
     const owner = new ethers.Wallet(
       ownerWalletPrivateKey,
       utils.loadProvider(),
     );
 
-    const contract = await new ExchangeStargateAdapter__factory(owner).deploy(
-      ...args,
-    );
+    const contract = await new KumaIndexAndOraclePriceAdapter__factory(
+      owner,
+    ).deploy(...args);
 
     return new this(await (await contract.waitForDeployment()).getAddress());
   }
 
-  public getEthersContract(): ExchangeStargateAdapter {
+  public getEthersContract(): KumaIndexAndOraclePriceAdapter {
     return this.contract;
   }
 }

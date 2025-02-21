@@ -18,7 +18,7 @@ import {
   TransferStruct,
   WalletLiquidationArgumentsStruct,
   WithdrawalStruct,
-} from '../typechain-types/contracts/Exchange.sol/Exchange_v4';
+} from '../typechain-types/contracts/Exchange.sol/Exchange_v1';
 import {
   WalletExitStruct,
   WalletStateStruct,
@@ -58,7 +58,7 @@ export const fundingPeriodLengthInMs = 8 * 60 * 60 * 1000;
 /** The fixed number of digits following the decimal in quantities expressed as pips */
 export const pipsDecimals = 8;
 
-export const signatureHashVersion = '4.0.0';
+export const signatureHashVersion = '1.0.0';
 
 export enum OrderSelfTradePrevention {
   DecreaseAndCancel,
@@ -196,7 +196,7 @@ export const getDomainSeparator = (
   chainId: number,
 ) => {
   return {
-    name: 'IDEX',
+    name: 'Kuma',
     version: `${signatureHashVersion}`,
     chainId,
     verifyingContract: contractAddress,
