@@ -112,101 +112,62 @@ const config: HardhatUserConfig = {
     hardhat: {
       allowUnlimitedContractSize: !!process.env.COVERAGE,
     },
-    private: {
-      chainId: 1001,
-      url: 'https://rpc-dev-geth.idex-dev.com:8545',
+    berachain: {
+      chainId: 80094,
+      url: 'https://rpc.berachain.com/',
     },
-    arbitrumSepolia: {
-      chainId: 421614,
-      url: 'https://sepolia-rollup.arbitrum.io/rpc',
+    cArtio: {
+      chainId: 80000,
+      url: 'https://rockbeard-eth-cartio.berachain.com/',
     },
     xchain: {
       chainId: 94524,
-      url: 'https://xchain-rpc.idex.io',
+      url: 'https://xchain-rpc.kuma.bid',
     },
     xchainTestnet: {
       chainId: 64002,
-      url: 'https://xchain-testnet-rpc.idex.io/',
-    },
-    polygonAmoy: {
-      chainId: 80002,
-      url: 'https://rpc-amoy.polygon.technology',
-    },
-    polygonMumbai: {
-      chainId: 80001,
-      url: 'https://polygon-mumbai.infura.io/v3/f893932c1fc54aa592bbe1b7419c8761',
-    },
-    polygonMainnet: {
-      chainId: 137,
-      url: 'https://polygon-mainnet.infura.io/v3/8a369d58e1a54e22a71b559a2aa92001',
+      url: 'https://xchain-testnet-rpc.kuma.bid/',
     },
   },
   etherscan: {
     apiKey: {
-      private: 'abc',
-      arbitrumSepolia: 'H6U42K28KCMQ2NRFXFE28I9UCP5HYV6M8U',
+      cArtio: 'abc',
       xchain: 'abc',
       xchainTestnet: 'abc',
-      polygonAmoy: 'bad22612-5107-4e49-b6d9-861b9f613cd5',
-      polygonMumbai: 'K7QYKN8XKGTR5J3W6D8A7625N7CH5RWITF',
-      polygonMainnet: 'K7QYKN8XKGTR5J3W6D8A7625N7CH5RWITF',
     },
     customChains: [
       {
-        network: 'private',
-        chainId: 1001,
+        network: 'berachain',
+        chainId: 80094,
         urls: {
-          apiURL: 'https://explorer-dev-geth.idex-dev.com/api/v1',
-          browserURL: 'https://explorer-dev-geth.idex-dev.com/',
+          apiURL:
+            'https://api.berascan.com/api',
+          browserURL: 'https://berascan.com/',
+        },
+      },
+      {
+        network: 'cArtio',
+        chainId: 80000,
+        urls: {
+          apiURL:
+            'https://api.routescan.io/v2/network/testnet/evm/80000/etherscan/api',
+          browserURL: 'https://80000.testnet.routescan.io/',
         },
       },
       {
         network: 'xchain',
         chainId: 94524,
         urls: {
-          apiURL: 'https://xchain-explorer.idex.io/api/v1',
-          browserURL: 'https://xchain-explorer.idex.io/',
+          apiURL: 'https://xchain-explorer.kuma.bid/api/v1',
+          browserURL: 'https://xchain-explorer.kuma.bid/',
         },
       },
       {
         network: 'xchainTestnet',
         chainId: 64002,
         urls: {
-          apiURL: 'https://xchain-testnet-explorer.idex.io/api/v1',
-          browserURL: 'https://xchain-testnet-explorer.idex.io/',
-        },
-      },
-      {
-        network: 'arbitrumSepolia',
-        chainId: 421614,
-        urls: {
-          apiURL: 'https://api-sepolia.arbiscan.io/api',
-          browserURL: 'https://sepolia.arbiscan.io/',
-        },
-      },
-      {
-        network: 'polygonAmoy',
-        chainId: 80002,
-        urls: {
-          apiURL:
-            'https://www.oklink.com/api/explorer/v1/contract/verify/async/api/amoy',
-          browserURL: 'https://www.oklink.com/amoy',
-        },
-      },
-      {
-        network: 'polygonMumbai',
-        chainId: 80001,
-        urls: {
-          apiURL: 'https://api-testnet.polygonscan.com/api',
-          browserURL: 'https://mumbai.polygonscan.com/',
-        },
-      },
-      {
-        network: 'polygonMainnet',
-        chainId: 137,
-        urls: {
-          apiURL: 'https://api.polygonscan.com/api',
-          browserURL: 'https://polygonscan.com/',
+          apiURL: 'https://xchain-testnet-explorer.kuma.bid/api/v1',
+          browserURL: 'https://xchain-testnet-explorer.kuma.bid/',
         },
       },
     ],

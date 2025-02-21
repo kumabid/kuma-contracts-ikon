@@ -3,7 +3,7 @@ import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import { ethers, network } from 'hardhat';
 
 import { decimalToAssetUnits } from '../lib';
-import type { Exchange_v4, USDC } from '../typechain-types';
+import type { Exchange_v1, USDC } from '../typechain-types';
 import {
   buildIndexPrice,
   deployAndAssociateContracts,
@@ -13,7 +13,7 @@ import {
 } from './helpers';
 
 describe('Exchange', function () {
-  let exchange: Exchange_v4;
+  let exchange: Exchange_v1;
   let ownerWallet: SignerWithAddress;
   let usdc: USDC;
 

@@ -25,7 +25,7 @@ import {
   signatureHashVersion,
   Trade,
 } from '../lib';
-import { Exchange_v4, Governance, USDC } from '../typechain-types';
+import { Exchange_v1, Governance, USDC } from '../typechain-types';
 
 export const quoteAssetDecimals = 6;
 
@@ -35,7 +35,7 @@ export const quoteAssetSymbol = 'USD';
 
 export async function addAndActivateMarket(
   dispatcherWallet: SignerWithAddress,
-  exchange: Exchange_v4,
+  exchange: Exchange_v1,
   baseAssetSymbol_ = baseAssetSymbol,
 ) {
   await exchange.addMarket({
@@ -242,7 +242,7 @@ export async function deployContractsExceptCustodian(
   const [
     ChainlinkAggregatorFactory,
     ChainlinkOraclePriceAdapterFactory,
-    IDEXIndexAndOraclePriceAdapterFactory,
+    KumaIndexAndOraclePriceAdapterFactory,
     USDCFactory,
     ExchangeFactory,
     GovernanceFactory,
@@ -250,7 +250,7 @@ export async function deployContractsExceptCustodian(
   ] = await Promise.all([
     ethers.getContractFactory('ChainlinkAggregatorMock'),
     ethers.getContractFactory('ChainlinkOraclePriceAdapter'),
-    ethers.getContractFactory('IDEXIndexAndOraclePriceAdapter'),
+    ethers.getContractFactory('KumaIndexAndOraclePriceAdapter'),
     ethers.getContractFactory('USDC'),
     deployLibraryContracts(),
     ethers.getContractFactory('Governance'),
@@ -282,7 +282,7 @@ export async function deployContractsExceptCustodian(
       ).waitForDeployment();
 
   const indexPriceAdapter = await (
-    await IDEXIndexAndOraclePriceAdapterFactory.connect(owner).deploy(
+    await KumaIndexAndOraclePriceAdapterFactory.connect(owner).deploy(
       owner.address,
       [indexPriceServiceWallet.address],
     )
@@ -459,7 +459,7 @@ export async function deployLibraryContracts() {
     (await Withdrawing.deploy()).waitForDeployment(),
   ]);
 
-  return ethers.getContractFactory('Exchange_v4', {
+  return ethers.getContractFactory('Exchange_v1', {
     libraries: {
       ClosureDeleveraging: await closureDeleveraging.getAddress(),
       Depositing: await depositing.getAddress(),
@@ -487,7 +487,7 @@ export async function deployLibraryContracts() {
 }
 
 export async function executeTrade(
-  exchange: Exchange_v4,
+  exchange: Exchange_v1,
   dispatcherWallet: SignerWithAddress,
   indexPrice: IndexPrice | null,
   indexPriceAdapterAddress: string,
@@ -565,7 +565,7 @@ export async function executeTrade(
 export async function fundWallets(
   wallets: SignerWithAddress[],
   dispatcherWallet: SignerWithAddress,
-  exchange: Exchange_v4,
+  exchange: Exchange_v1,
   usdc: USDC,
   quantity = '2000.00000000',
 ) {
@@ -625,7 +625,7 @@ export async function getLatestBlockTimestampInSeconds(): Promise<number> {
 }
 
 export async function loadFundingMultipliers(
-  exchange: Exchange_v4,
+  exchange: Exchange_v1,
   baseAssetSymbol_ = baseAssetSymbol,
 ) {
   const multipliers: string[][] = [];
@@ -654,7 +654,7 @@ export async function loadFundingMultipliers(
 
 export async function logWalletBalances(
   wallet: string,
-  exchange: Exchange_v4,
+  exchange: Exchange_v1,
   baseAssetSymbols: string[],
 ) {
   console.log(
@@ -716,7 +716,7 @@ export const pipToDecimal = function pipToDecimal(pips: BigInt): string {
 };
 
 export async function setupSingleShortPositionRequiringPositiveQuoteToClose(
-  exchange: Exchange_v4,
+  exchange: Exchange_v1,
   governance: Governance,
   indexPriceAdapterAddress: string,
   usdc: USDC,

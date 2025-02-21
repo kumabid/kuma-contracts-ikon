@@ -4,8 +4,8 @@ import { ethers, network } from 'hardhat';
 
 import type {
   ChainlinkAggregatorMock,
-  Exchange_v4,
-  IDEXIndexAndOraclePriceAdapter,
+  Exchange_v1,
+  KumaIndexAndOraclePriceAdapter,
   USDC,
   WithdrawExitValidationsMock,
 } from '../typechain-types';
@@ -23,10 +23,10 @@ import {
 describe('Exchange', function () {
   let chainlinkAggregator: ChainlinkAggregatorMock;
   let dispatcherWallet: SignerWithAddress;
-  let exchange: Exchange_v4;
+  let exchange: Exchange_v1;
   let exitFundWallet: SignerWithAddress;
   let indexPrice: IndexPrice;
-  let indexPriceAdapter: IDEXIndexAndOraclePriceAdapter;
+  let indexPriceAdapter: KumaIndexAndOraclePriceAdapter;
   let indexPriceServiceWallet: SignerWithAddress;
   let insuranceFundWallet: SignerWithAddress;
   let ownerWallet: SignerWithAddress;

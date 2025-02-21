@@ -32,21 +32,21 @@ import {
   IndexPricePayloadStruct,
 } from '../lib';
 import type {
-  Exchange_v4,
+  Exchange_v1,
   Governance,
-  IDEXIndexAndOraclePriceAdapter,
+  KumaIndexAndOraclePriceAdapter,
   USDC,
 } from '../typechain-types';
-import { MarketStruct } from '../typechain-types/contracts/Exchange.sol/Exchange_v4';
+import { MarketStruct } from '../typechain-types/contracts/Exchange.sol/Exchange_v1';
 
 describe.skip('Gas measurement', function () {
   let buyOrder: Order;
   let buyOrderSignature: string;
   let dispatcherWallet: SignerWithAddress;
-  let exchange: Exchange_v4;
+  let exchange: Exchange_v1;
   let exitFundWallet: SignerWithAddress;
   let governance: Governance;
-  let indexPriceAdapter: IDEXIndexAndOraclePriceAdapter;
+  let indexPriceAdapter: KumaIndexAndOraclePriceAdapter;
   let indexPriceServiceWallet: SignerWithAddress;
   let insuranceFundWallet: SignerWithAddress;
   let marketStruct: MarketStruct;
@@ -1641,9 +1641,9 @@ describe.skip('Gas measurement', function () {
 });
 
 async function publishFundingRates(
-  exchange: Exchange_v4,
+  exchange: Exchange_v1,
   dispatcherWallet: SignerWithAddress,
-  indexPriceAdapter: IDEXIndexAndOraclePriceAdapter,
+  indexPriceAdapter: KumaIndexAndOraclePriceAdapter,
   indexPriceServiceWallet: SignerWithAddress,
   count: number,
 ) {
@@ -1691,7 +1691,7 @@ function getFundingRate(index = 0): string {
 async function addMarket(
   symbol: string,
   dispatcherWallet: SignerWithAddress,
-  exchange: Exchange_v4,
+  exchange: Exchange_v1,
   marketStruct: MarketStruct,
 ) {
   const newMarketStruct = { ...marketStruct, baseAssetSymbol: symbol };

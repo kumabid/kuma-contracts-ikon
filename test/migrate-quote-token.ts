@@ -3,7 +3,7 @@ import { ethers } from 'hardhat';
 
 import {
   Custodian,
-  Exchange_v4,
+  Exchange_v1,
   GovernanceMock,
   NativeConverterMock,
   USDC,
@@ -20,7 +20,7 @@ describe('Exchange', function () {
   describe('migrateQuoteTokenAddress', () => {
     let assetMigrator: USDCeMigrator;
     let custodian: Custodian;
-    let exchange: Exchange_v4;
+    let exchange: Exchange_v1;
     let governanceMock: GovernanceMock;
     let nativeConverterMock: NativeConverterMock;
     let ownerWallet: SignerWithAddress;
@@ -155,7 +155,7 @@ describe('Exchange', function () {
 
 describe('USDCeMigrator', function () {
   let custodian: Custodian;
-  let exchange: Exchange_v4;
+  let exchange: Exchange_v1;
   let governanceMock: GovernanceMock;
   let nativeConverterMock: NativeConverterMock;
   let ownerWallet: SignerWithAddress;

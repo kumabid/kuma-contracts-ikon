@@ -3,7 +3,7 @@ import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { ethers, network } from 'hardhat';
 
-import { Exchange_v4__factory } from '../typechain-types';
+import { Exchange_v1__factory, type StargateV2PoolMock } from '../typechain-types';
 
 import { fieldUpgradeDelayInS } from '../lib';
 import {
@@ -17,20 +17,20 @@ import {
 import type {
   ChainlinkOraclePriceAdapter,
   Custodian,
-  Exchange_v4,
-  ExchangeStargateAdapter,
-  ExchangeStargateAdapter__factory,
+  Exchange_v1,
+  ExchangeLayerZeroAdapter,
+  ExchangeLayerZeroAdapter__factory,
   Governance,
   USDC,
-  IDEXIndexAndOraclePriceAdapter,
+  KumaIndexAndOraclePriceAdapter,
 } from '../typechain-types';
 
 describe('Governance', function () {
   let custodian: Custodian;
   let dispatcherWallet: SignerWithAddress;
-  let exchange: Exchange_v4;
-  let ExchangeFactory: Exchange_v4__factory;
-  let indexPriceAdapter: IDEXIndexAndOraclePriceAdapter;
+  let exchange: Exchange_v1;
+  let ExchangeFactory: Exchange_v1__factory;
+  let indexPriceAdapter: KumaIndexAndOraclePriceAdapter;
   let indexPriceServiceWallet: SignerWithAddress;
   let insuranceFundWallet: SignerWithAddress;
   let governance: Governance;
@@ -67,18 +67,23 @@ describe('Governance', function () {
   });
 
   describe('bridge adapters upgrade', () => {
-    let bridgeAdapter: ExchangeStargateAdapter;
-    let ExchangeStargateAdapterFactory: ExchangeStargateAdapter__factory;
+    let bridgeAdapter: ExchangeLayerZeroAdapter;
+    let ExchangeLayerZeroAdapterFactory: ExchangeLayerZeroAdapter__factory;
+    let stargatePoolMock: StargateV2PoolMock;
 
     beforeEach(async () => {
-      ExchangeStargateAdapterFactory = await ethers.getContractFactory(
-        'ExchangeStargateAdapter',
+      ExchangeLayerZeroAdapterFactory = await ethers.getContractFactory(
+        'ExchangeLayerZeroAdapter',
       );
+      stargatePoolMock = await (
+        await ethers.getContractFactory('StargateV2PoolMock')
+      ).deploy(0, await usdc.getAddress());
 
-      bridgeAdapter = await ExchangeStargateAdapterFactory.deploy(
+      bridgeAdapter = await ExchangeLayerZeroAdapterFactory.deploy(
         await custodian.getAddress(),
         99900000,
-        await exchange.getAddress(),
+        await stargatePoolMock.getAddress(),
+        await stargatePoolMock.getAddress(),
         await usdc.getAddress(),
       );
     });
@@ -275,12 +280,12 @@ describe('Governance', function () {
     });
 
     describe('Index Price Adapter upgrade', () => {
-      let newIndexPriceAdapter: IDEXIndexAndOraclePriceAdapter;
+      let newIndexPriceAdapter: KumaIndexAndOraclePriceAdapter;
 
       beforeEach(async () => {
         newIndexPriceAdapter = await (
           await (
-            await ethers.getContractFactory('IDEXIndexAndOraclePriceAdapter')
+            await ethers.getContractFactory('KumaIndexAndOraclePriceAdapter')
           ).deploy(await governance.getAddress(), [
             indexPriceServiceWallet.address,
           ])

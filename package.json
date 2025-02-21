@@ -1,7 +1,7 @@
 {
   "name": "@idexio/idex-contracts-ikon",
   "version": "1.0.1-sandbox",
-  "description": "Collects source code, tests, and documentation for the IDEX Ikon release Solidity contracts",
+  "description": "Collects source code, tests, and documentation for the Kuma release Solidity contracts",
   "homepage": "https://github.com/idexio/idex-contracts-ikon",
   "repository": "https://github.com/idexio/idex-contracts-ikon",
   "license": "MIT",

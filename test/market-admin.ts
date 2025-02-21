@@ -5,10 +5,10 @@ import { ethers, network } from 'hardhat';
 
 import type {
   ChainlinkOraclePriceAdapter,
-  Exchange_v4,
-  IDEXIndexAndOraclePriceAdapter,
+  Exchange_v1,
+  KumaIndexAndOraclePriceAdapter,
 } from '../typechain-types';
-import type { MarketStruct } from '../typechain-types/contracts/Exchange.sol/Exchange_v4';
+import type { MarketStruct } from '../typechain-types/contracts/Exchange.sol/Exchange_v1';
 import {
   baseAssetSymbol,
   buildIndexPrice,
@@ -20,8 +20,8 @@ import {
 import { decimalToPips, indexPriceToArgumentStruct } from '../lib';
 
 describe('Exchange', function () {
-  let exchange: Exchange_v4;
-  let indexPriceAdapter: IDEXIndexAndOraclePriceAdapter;
+  let exchange: Exchange_v1;
+  let indexPriceAdapter: KumaIndexAndOraclePriceAdapter;
   let indexPriceServiceWallet: SignerWithAddress;
   let marketStruct: MarketStruct;
   let ownerWallet: SignerWithAddress;
