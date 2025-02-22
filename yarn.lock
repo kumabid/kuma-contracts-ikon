@@ -1068,9 +1068,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@idexio/idex-contracts-ikon-kuma-rebrand@workspace:.":
+"@idexio/idex-contracts-ikon@workspace:.":
   version: 0.0.0-use.local
-  resolution: "@idexio/idex-contracts-ikon-kuma-rebrand@workspace:."
+  resolution: "@idexio/idex-contracts-ikon@workspace:."
   dependencies:
     "@chainlink/contracts": "npm:^0.8.0"
     "@commitlint/config-conventional": "npm:^17.7.0"
