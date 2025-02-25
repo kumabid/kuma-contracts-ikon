@@ -669,7 +669,8 @@ describe('Exchange', function () {
     });
 
     it('should work for single quartet with start date before earliest funding multiplier', async function () {
-      const currentBlockTimestamp = await getLatestBlockTimestampInSeconds();
+      const currentBlockTimestamp =
+        (await getMidnightTomorrowInSecondsUTC()) * 1000;
       const earliestTimestampInMs =
         currentBlockTimestamp - fundingPeriodLengthInMs * 20;
       await fundingMultiplierMock.publishFundingMultiplier(

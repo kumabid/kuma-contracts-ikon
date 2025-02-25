@@ -133,7 +133,9 @@ describe('Exchange', function () {
         ownerWallet.address,
         [await indexPriceAdapter.getAddress()],
         ownerWallet.address,
-        await indexPriceAdapter.getAddress(),
+        await (
+          await ethers.getContractFactory('OraclePriceAdapterMock')
+        ).deploy(),
         await usdc.getAddress(),
       );
       await governance.initiateExchangeUpgrade(await newExchange.getAddress());
