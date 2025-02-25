@@ -31,7 +31,7 @@ contract StargateV2PoolMock {
   }
 
   function quoteSend(SendParam calldata, bool) public view returns (MessagingFee memory) {
-    return MessagingFee({ nativeFee: fee, lzTokenFee:0 });
+    return MessagingFee({ nativeFee: fee, lzTokenFee: 0 });
   }
 
   function send(
@@ -39,6 +39,9 @@ contract StargateV2PoolMock {
     MessagingFee calldata _fee,
     address
   ) public payable returns (MessagingReceipt memory, OFTReceipt memory) {
-    return (MessagingReceipt({ guid: bytes32(0x0), nonce:0, fee: _fee }), OFTReceipt({amountSentLD: _sendParam.amountLD, amountReceivedLD: _sendParam.amountLD}));
+    return (
+      MessagingReceipt({ guid: bytes32(0x0), nonce: 0, fee: _fee }),
+      OFTReceipt({ amountSentLD: _sendParam.amountLD, amountReceivedLD: _sendParam.amountLD })
+    );
   }
 }
