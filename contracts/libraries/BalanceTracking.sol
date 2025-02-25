@@ -8,6 +8,7 @@ import { MarketHelper } from "./MarketHelper.sol";
 import { Math } from "./Math.sol";
 import { OrderSide } from "./Enums.sol";
 import { SortedStringSet } from "./SortedStringSet.sol";
+import { String } from "./String.sol";
 import { IExchange, IOraclePriceAdapter } from "./Interfaces.sol";
 import { Balance, ExecuteTradeArguments, Market, MarketOverrides, Transfer, Withdrawal } from "./Structs.sol";
 
@@ -431,6 +432,9 @@ library BalanceTracking {
     Balance memory migratedBalanceStruct;
     if (!balance.isMigrated && address(self.migrationSource) != address(0x0)) {
       migratedBalanceStruct = self.migrationSource.loadBalanceStructBySymbol(wallet, assetSymbol);
+      if (String.isEqual(assetSymbol, Constants.QUOTE_ASSET_SYMBOL)) {
+        migratedBalanceStruct.balance += self.migrationSource.loadOutstandingWalletFunding(wallet);
+      }
 
       balance.isMigrated = true;
       balance.balance = migratedBalanceStruct.balance;

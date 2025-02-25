@@ -1090,6 +1090,7 @@ contract Exchange_v1 is EIP712, IExchange, Owned {
   function addMarket(Market memory newMarket) public onlyAdmin {
     MarketAdmin.addMarket_delegatecall(
       newMarket,
+      _balanceTracking.migrationSource,
       oraclePriceAdapter,
       fundingMultipliersByBaseAssetSymbol,
       lastFundingRatePublishTimestampInMsByBaseAssetSymbol,

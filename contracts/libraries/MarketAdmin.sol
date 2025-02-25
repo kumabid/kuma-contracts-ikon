@@ -3,6 +3,7 @@
 pragma solidity 0.8.18;
 
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import { Constants } from "./Constants.sol";
 import { Funding } from "./Funding.sol";
@@ -11,7 +12,7 @@ import { MarketHelper } from "./MarketHelper.sol";
 import { String } from "./String.sol";
 import { Time } from "./Time.sol";
 import { Validations } from "./Validations.sol";
-import { IIndexPriceAdapter, IOraclePriceAdapter } from "./Interfaces.sol";
+import { IExchange, IIndexPriceAdapter, IOraclePriceAdapter } from "./Interfaces.sol";
 import { IndexPricePayload, FundingMultiplierQuartet, IndexPrice, Market } from "./Structs.sol";
 
 library MarketAdmin {
@@ -37,6 +38,7 @@ library MarketAdmin {
   // solhint-disable-next-line func-name-mixedcase
   function addMarket_delegatecall(
     Market memory newMarket,
+    IExchange balanceMigrationSource,
     IOraclePriceAdapter oraclePriceAdapter,
     mapping(string => FundingMultiplierQuartet[]) storage fundingMultipliersByBaseAssetSymbol,
     mapping(string => uint64) storage lastFundingRatePublishTimestampInMsByBaseAssetSymbol,
@@ -53,7 +55,7 @@ library MarketAdmin {
 
     // Populate non-overridable fields and commit new market to storage
     newMarket.exists = true;
-    newMarket.isActive = false;
+    newMarket.isActive = isMarketActiveInMigrationSource(newMarket.baseAssetSymbol, balanceMigrationSource);
     newMarket.lastIndexPrice = oraclePriceAdapter.loadPriceForBaseAssetSymbol(newMarket.baseAssetSymbol);
     newMarket.lastIndexPriceTimestampInMs = uint64(block.timestamp * 1000);
 
@@ -130,5 +132,24 @@ library MarketAdmin {
 
       emit IndexPricePublished(indexPrice.baseAssetSymbol, indexPrice.timestampInMs, indexPrice.price);
     }
+  }
+
+  function isMarketActiveInMigrationSource(
+    string memory baseAssetSymbol,
+    IExchange balanceMigrationSource
+  ) private view returns (bool) {
+    if (address(balanceMigrationSource) == address(0x0)) {
+      return false;
+    }
+
+    uint256 marketsLength = balanceMigrationSource.loadMarketsLength();
+    for (uint256 i = 0; i < marketsLength; i++) {
+      Market memory migratedMarket = balanceMigrationSource.loadMarket(SafeCast.toUint8(i));
+      if (String.isEqual(migratedMarket.baseAssetSymbol, baseAssetSymbol)) {
+        return migratedMarket.isActive;
+      }
+    }
+
+    return false;
   }
 }

@@ -97,6 +97,16 @@ const solidity = process.env.COVERAGE
             viaIR: true,
           },
         },
+        'contracts/libraries/Trading.sol': {
+          version: SOLC_VERSION,
+          settings: {
+            optimizer: {
+              enabled: true,
+              runs: 20000,
+            },
+            viaIR: true,
+          },
+        },
         'contracts/bridge-adapters/ExchangeStargateV2Adapter.sol': {
           version: SOLC_VERSION_STARGATE,
         },
@@ -140,8 +150,7 @@ const config: HardhatUserConfig = {
         network: 'berachain',
         chainId: 80094,
         urls: {
-          apiURL:
-            'https://api.berascan.com/api',
+          apiURL: 'https://api.berascan.com/api',
           browserURL: 'https://berascan.com/',
         },
       },

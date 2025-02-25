@@ -668,6 +668,41 @@ describe('Exchange', function () {
       );
     });
 
+    it('should work for single quartet with start date before earliest funding multiplier', async function () {
+      const currentBlockTimestamp =
+        (await getMidnightTomorrowInSecondsUTC()) * 1000;
+      const earliestTimestampInMs =
+        currentBlockTimestamp - fundingPeriodLengthInMs * 20;
+      await fundingMultiplierMock.publishFundingMultiplier(
+        decimalToPips(getFundingRate(0)),
+      );
+      await expect(
+        fundingMultiplierMock.loadAggregatePayment(
+          earliestTimestampInMs,
+          currentBlockTimestamp,
+          currentBlockTimestamp,
+          decimalToPips('1.00000000'),
+        ),
+      ).to.eventually.equal(decimalToPips(getFundingRate(0)));
+    });
+
+    it('should work for single quartet with end date after latest funding multiplier', async function () {
+      const currentBlockTimestamp = await getLatestBlockTimestampInSeconds();
+      const endTimestampInMs =
+        currentBlockTimestamp + fundingPeriodLengthInMs * 20;
+      await fundingMultiplierMock.publishFundingMultiplier(
+        decimalToPips(getFundingRate(0)),
+      );
+      await expect(
+        fundingMultiplierMock.loadAggregatePayment(
+          currentBlockTimestamp,
+          endTimestampInMs,
+          currentBlockTimestamp,
+          decimalToPips('1.00000000'),
+        ),
+      ).to.eventually.equal(decimalToPips(getFundingRate(0)));
+    });
+
     it('should work for multiple quartets', async function () {
       const earliestTimestampInMs =
         (await getMidnightTomorrowInSecondsUTC()) * 1000;
