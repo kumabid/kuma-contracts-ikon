@@ -58,7 +58,10 @@ contract KumaIndexAndOraclePriceAdapter is IIndexPriceAdapter, IOraclePriceAdapt
    */
   function loadPriceForBaseAssetSymbol(string memory baseAssetSymbol) public view returns (uint64 price) {
     IndexPrice memory indexPrice = latestIndexPriceByBaseAssetSymbol[baseAssetSymbol];
-    require(indexPrice.price > 0, "Missing price");
+    if (indexPrice.price == 0) {
+      return 1;
+    }
+    // require(indexPrice.price > 0, "Missing price");
 
     return indexPrice.price;
   }
