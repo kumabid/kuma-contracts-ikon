@@ -22,12 +22,14 @@ import type {
   Exchange_v1,
   ExchangeLayerZeroAdapter__factory,
   USDC,
-  StargateV2PoolMock, Governance, ExchangeLayerZeroAdapter,
+  StargateV2PoolMock,
+  Governance,
+  ExchangeLayerZeroAdapter,
 } from '../typechain-types';
 import type { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 
 describe('bridge-adapters', function () {
-  describe('ExchangeLayerZeroAdapter', function() {
+  describe('ExchangeLayerZeroAdapter', function () {
     let custodian: Custodian;
     let dispatcherWallet: SignerWithAddress;
     let exchange: Exchange_v1;
@@ -76,7 +78,7 @@ describe('bridge-adapters', function () {
       ).deploy(sendFee, await usdc.getAddress());
     });
 
-    describe('deploy', async function() {
+    describe('deploy', async function () {
       it('should work for valid arguments', async () => {
         await ExchangeLayerZeroAdapterFactory.deploy(
           await custodian.getAddress(),
@@ -99,7 +101,7 @@ describe('bridge-adapters', function () {
         ).to.eventually.be.rejectedWith(/invalid custodian address/i);
       });
 
-      it('should revert for invalid Stargate pool address', async () => {
+      it('should revert for invalid OFT address', async () => {
         await expect(
           ExchangeLayerZeroAdapterFactory.deploy(
             await custodian.getAddress(),
@@ -108,7 +110,7 @@ describe('bridge-adapters', function () {
             ethers.ZeroAddress,
             await usdc.getAddress(),
           ),
-        ).to.eventually.be.rejectedWith(/invalid stargate address/i);
+        ).to.eventually.be.rejectedWith(/invalid oft address/i);
       });
 
       it('should revert for invalid LZ endpoint address', async () => {
@@ -136,7 +138,7 @@ describe('bridge-adapters', function () {
       });
     });
 
-    describe('lzCompose', async function() {
+    describe('lzCompose', async function () {
       it('should work for valid arguments', async () => {
         const depositQuantityInDecimal = '5.00000000';
         const depositQuantityInAssetUnits = ethers.parseUnits(
@@ -363,7 +365,7 @@ describe('bridge-adapters', function () {
       });
     });
 
-    describe('withdrawQuoteAsset', async function() {
+    describe('withdrawQuoteAsset', async function () {
       let bridgeAdapter: ExchangeLayerZeroAdapter;
       let signature: string;
       let withdrawal: Withdrawal;
@@ -471,6 +473,6 @@ describe('bridge-adapters', function () {
             ...getWithdrawArguments(withdrawal, '0.00000000', signature),
           );
       });
-    })
+    });
   });
-})
+});
