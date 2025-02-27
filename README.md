@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD033 -->
-# <img src="assets/logo-v4.png" alt="IDEX" height="37px" valign="top"> Ikon Smart Contracts
+# <img src="assets/kuma-logo.png" alt="Kuma" height="37px" valign="top"> Ikon Smart Contracts
 
 ![Tests](./assets/tests.svg)
 ![Lines](./assets/coverage-lines.svg)
@@ -9,7 +9,7 @@
 
 ## Overview
 
-This repo collects source code, tests, and documentation for the primary [IDEX Ikon](https://blog.idex.io/all-posts/idex-v4-decentralized-perpetual-swaps) release Solidity contracts.
+This repo collects source code, tests, and documentation for the primary [Kuma](https://kuma.bid) Solidity contracts.
 
 ## Usage
 
@@ -28,7 +28,7 @@ yarn test:coverage
 
 ## Background
 
-The IDEX Ikon release follows [Silverton](https://github.com/idexio/idex-contracts-silverton), which introduced IDEX v3. Ikon’s key innovation is the introduction of perpetual futures, enabling high-performance, leveraged trading backed by smart contract fund custody. The Ikon release includes updated contracts as well as off-chain infrastructure and discontinues the use of Silverton’s hybrid liquidity.
+The Kuma Ikon release brings high-performance, leveraged trading backed by smart contract fund custody to the [Berachain](https://www.berachain.com/) ecosystem.
 
 ## Contract Structure
 
@@ -52,7 +52,7 @@ Ikon supports trading a wide range of synthetic assets via perpetual futures con
 
 ### Deposit
 
-Users must deposit funds into the Ikon contracts before they are available for trading on IDEX. [Only USDC may be deposited](#quote-asset-and-quote-token), and depositing requires an `approve` call on the token contract before calling `deposit` on the Exchange contract.
+Users must deposit funds into the Ikon contracts before they are available for trading on Kuma. [Only USDC may be deposited](#quote-asset-and-quote-token), and depositing requires an `approve` call on the token contract before calling `deposit` on the Exchange contract.
 
 - The `deposit` function is exposed by the Exchange contract, but funds are ultimately held in the Custodian contract. As part of the deposit process, tokens are transferred from the funding wallet to the Custodian contract while the Exchange contract’s storage tracks wallet asset balances. Separate exchange logic and fund custody supports Ikon’s [upgrade design](#upgradability).
 - Deposits are credited to a wallet’s Exchange balance tracking via a two-step process. On the initial `deposit` call, funds are credited to temporary storage in `pendingDepositQuantityByWallet`; once the off-chain systems process the deposit, the quantity is moved to the wallet’s quote balance in `_balanceTracking` by a whitelisted dispatcher wallet. This two-step process avoids race conditions by ensuring that margin calculations and other contract checks are synchronized between off- and on-chain systems.
@@ -61,23 +61,23 @@ Users must deposit funds into the Ikon contracts before they are available for t
 
 ### Trade
 
-Ikon includes support for order book trades only; unlike its predecessor, [Silverton](https://github.com/idexio/idex-contracts-silverton), it does not implement hybrid liquidity trade types. All order management and trade matching happens off-chain while trades are ultimately settled on-chain. A trade is considered settled when the Exchange contract’s wallet asset balances reflect the new values agreed to in the trade. Exchange’s `executeTrade` function is responsible for settling trades.
+Ikon includes support for order book trades only. All order management and trade matching happens off-chain while trades are ultimately settled on-chain. A trade is considered settled when the Exchange contract’s wallet asset balances reflect the new values agreed to in the trade. Exchange’s `executeTrade` function is responsible for settling trades.
 
-- Unlike deposits, trade settlement can only be initiated via a whitelisted dispatcher wallet controlled by IDEX. Users do not settle trades directly; only IDEX can submit trades for settlement. Because IDEX alone controls dispatch, IDEX’s off-chain components can guarantee the eventual on-chain trade settlement order and thus allow users to trade in real-time without waiting for dispatch or mining.
-- The primary responsibility of the trade functions is order and trade validation. In the case that IDEX off-chain infrastructure is compromised, the validations ensure that funds can only move in accordance with orders signed by the depositing wallet. Ikon additionally supports orders signed by a [delegated key](#delegated-keys) that is authorized by the depositing wallet.
+- Unlike deposits, trade settlement can only be initiated via a whitelisted dispatcher wallet controlled by Kuma. Users do not settle trades directly; only Kuma can submit trades for settlement. Because Kuma alone controls dispatch, Kuma’s off-chain components can guarantee the eventual on-chain trade settlement order and thus allow users to trade in real-time without waiting for dispatch or mining.
+- The primary responsibility of the trade functions is order and trade validation. In the case that Kuma off-chain infrastructure is compromised, the validations ensure that funds can only move in accordance with orders signed by the depositing wallet. Ikon additionally supports orders signed by a [delegated key](#delegated-keys) that is authorized by the depositing wallet.
 - Like all actions that change wallet balances, trade settlement applies outstanding [funding payments](#funding-payments) to the participating wallets.
 - As traders may take on leverage, trade settlement enforces [margin requirements](#margin) on any resulting positions. Wallets must meet the initial margin requirement following any trade that increases the absolute quantity of a position and must meet the maintenance margin requirement following any trade that decreases the absolute quantity of a position.
 - Due to business requirements, order quantity and price are specified as strings in [pip precision](#precision-and-pips), hence the need for order signature validation to convert the provided values to strings.
 - Ikon supports partial fills on orders, which requires additional bookkeeping to prevent overfills and replays.
-- [Fees](#fees) are assessed as part of trade settlement. The off-chain trading engine computes fees, but the contract logic is responsible for enforcing that fees are within [previously defined limits](#controls-and-governance). Because only an IDEX-controlled dispatcher wallet can make the settlement calls, IDEX is the immediate gas payer for trade settlement. IDEX passes along the estimated gas costs to users by including them in the trade fees.
+- [Fees](#fees) are assessed as part of trade settlement. The off-chain trading engine computes fees, but the contract logic is responsible for enforcing that fees are within [previously defined limits](#controls-and-governance). Because only an Kuma-controlled dispatcher wallet can make the settlement calls, Kuma is the immediate gas payer for trade settlement. Kuma passes along the estimated gas costs to users by including them in the trade fees.
 
 ### Withdraw
 
-Similar to trade settlement, withdrawals are initiated by users via IDEX’s off-chain components, but calls to the Exchange contract’s `withdraw` function are restricted to a whitelisted dispatcher wallet. `withdraw` calls are limited to a dispatcher wallet in order to guarantee the balance update sequence and thus support trading ahead of settlement. There is also a [wallet exit](#wallet-exits) mechanism to prevent withdrawal censorship by IDEX. [Only USDC may be withdrawn.](#quote-asset-and-quote-token)
+Similar to trade settlement, withdrawals are initiated by users via Kuma’s off-chain components, but calls to the Exchange contract’s `withdraw` function are restricted to a whitelisted dispatcher wallet. `withdraw` calls are limited to a dispatcher wallet in order to guarantee the balance update sequence and thus support trading ahead of settlement. There is also a [wallet exit](#wallet-exits) mechanism to prevent withdrawal censorship by Kuma. [Only USDC may be withdrawn.](#quote-asset-and-quote-token)
 
 - Users may withdraw USDC collateral up to the [initial margin requirements](#margin) of the wallet without first liquidating positions.
 - Ikon supports seamless cross-chain withdrawals via [bridge adapter contracts](#cross-chain-bridge-protocol-support).
-- IDEX collects fees on withdrawals in order to cover the gas costs of the `withdraw` function call. Because only an IDEX-controlled dispatcher wallet can make the `withdraw` call, IDEX is the immediate gas payer for user withdrawals. IDEX passes along the estimated gas costs to users by collecting a fee out of the withdrawn amount. Withdrawal gas fees are limited to a `maximumGasFee` parameter signed by the wallet, or the withdrawal request is rejected.
+- Kuma collects fees on withdrawals in order to cover the gas costs of the `withdraw` function call. Because only an Kuma-controlled dispatcher wallet can make the `withdraw` call, Kuma is the immediate gas payer for user withdrawals. Kuma passes along the estimated gas costs to users by collecting a fee out of the withdrawn amount. Withdrawal gas fees are limited to a `maximumGasFee` parameter signed by the wallet, or the withdrawal request is rejected.
 - Like all actions that change wallet balances, withdrawals apply outstanding funding payments to the withdrawing wallet.
 - Despite the `withdraw` function being part of the Exchange contract, funds are returned to the user’s wallet from the Custodian contract.
 
@@ -87,7 +87,7 @@ In addition to withdrawals, Ikon includes the ability for wallets to transfer qu
 
 ## Liquidation
 
-In some situations, Ikon proactively liquidates wallets or balances to ensure the solvency of the system. Only an IDEX-controlled dispatcher wallet is authorized to perform liquidations, and liquidation actions validate the conditions under which they may proceed. Two special wallets, the insurance fund and the exit fund, acquire balances during most liquidations.
+In some situations, Ikon proactively liquidates wallets or balances to ensure the solvency of the system. Only an Kuma-controlled dispatcher wallet is authorized to perform liquidations, and liquidation actions validate the conditions under which they may proceed. Two special wallets, the insurance fund and the exit fund, acquire balances during most liquidations.
 
 - [Index prices](#index-pricing) rather than order book prices determine margin requirements and thus liquidation conditions.
 - Like all actions that change wallet balances, liquidations apply outstanding [funding payments](#funding-payments) to the participating wallet.
@@ -132,7 +132,7 @@ Conditions: Liquidation of an [exited wallet](#wallet-exits). Ikon’s off-chain
 
 ## Automatic Deleveraging
 
-In some situations, Ikon closes open positions directly against select counterparty positions in a process called automatic deleveraging (ADL). ADL provides a backstop of system solvency when liquidation is not an option. Only an IDEX-controlled dispatcher wallet is authorized to perform ADL, and ADL actions validate the conditions under which they may proceed.
+In some situations, Ikon closes open positions directly against select counterparty positions in a process called automatic deleveraging (ADL). ADL provides a backstop of system solvency when liquidation is not an option. Only an Kuma-controlled dispatcher wallet is authorized to perform ADL, and ADL actions validate the conditions under which they may proceed.
 
 - ADL actions fall into two categories: acquisition and closure. Acquisition ADL applies when the insurance fund is unable to acquire a position due to its [margin requirements](#margin) or position size maximums. Closure ADL applies when order book liquidity is insufficient or unavailable to close a position acquired by the insurance or exit funds.
 - Unlike liquidation, ADL actions apply to a single position and counterparty for each settlement. One position may require several ADL settlements to completely close as the selected counterparty positions may be smaller than the target position.
@@ -169,7 +169,7 @@ Condition: Reduction of a single position held by the exit fund against a counte
 
 ## Margin
 
-The IDEX Ikon release offers leveraged trading, making margin a key concept for both users and exchange operations. Ikon implements a cross-margined model, where all open positions count towards an aggregate total account value and margin requirements. Margin requirements are defined on a per-market basis using two primary parameters:
+The Kuma Ikon release offers leveraged trading, making margin a key concept for both users and exchange operations. Ikon implements a cross-margined model, where all open positions count towards an aggregate total account value and margin requirements. Margin requirements are defined on a per-market basis using two primary parameters:
 
 - `initialMarginFraction`: Margin requirement necessary to open a position, withdraw, or transfer funds.
 - `maintenanceMarginFraction`: Margin requirement necessary to prevent [liquidation](#liquidation). This is almost always set lower than `initialMarginFraction` to allow for price movement before liquidation.
@@ -194,7 +194,7 @@ Ikon uses index prices rather than order book prices for all [margin calculation
 Index prices are frequently updated in Ikon’s off-chain infrastructure and lazily published on chain via Exchange’s `publishIndexPrices` by the dispatcher wallet. Specifically, on-chain index prices are only updated immediately prior to another dependent operation. For example, if the BTC-USD on-chain index price is out of date, Ikon’s off-chain infrastructure first publishes the latest index price for BTC before submitting a new trade for settlement. Lazy on-chain price updates minimize transaction volume and gas costs.
 
 
-- Ikon implements a modular index price validation system supporting an extensible range of pricing data sources. At launch, Ikon supports [Pyth Network](https://pyth.network/), [Stork](https://www.stork.network/), and an IDEX-operated first party index price data service.
+- Ikon implements a modular index price validation system supporting an extensible range of pricing data sources. At launch, Ikon supports [Pyth Network](https://pyth.network/), [Stork](https://www.stork.network/), and an Kuma-operated first party index price data service.
 - Modular index price adapter contracts may be added, upgraded, or removed independently of [Exchange upgrades](#upgradability), subject to a governance delay for safety. See [controls and governance](#controls-and-governance) for details.
 - First party index prices are collected by secure off-chain systems from a range of price sources. They are signed at the point of collection with signatures that are verified on chain.
 - In addition to verifying signatures, contract logic also verifies that index price timestamps are greater than the last committed index price, and also that timestamps are not more than one day in the future.
@@ -220,13 +220,13 @@ Funding payments are a common mechanism for incentivizing the convergence of ord
 
 ## Wallet Exits
 
-Previous versions of IDEX introduced a wallet exit mechanism, allowing users to withdraw funds in the case that IDEX is offline or maliciously censoring withdrawals. Calling `exitWallet` initiates the exit process, which prevents the wallet from subsequent deposits, trades, or normal withdrawals. Wallet exits are a two-step process as defined in [controls](#controls-and-governance).
+Ikon includes a wallet exit mechanism, allowing users to withdraw funds in the case that Kuma is offline or maliciously censoring withdrawals. Calling `exitWallet` initiates the exit process, which prevents the wallet from subsequent deposits, trades, or normal withdrawals. Wallet exits are a two-step process as defined in [controls](#controls-and-governance).
 
 In Ikon, wallet exit withdrawals via Exchange’s `withdrawExit` close any open positions and return the remaining USDC quote balance, including any pending deposits, to the wallet. In order to support offline operation, exit withdrawals must execute deterministically in contract logic without the user supplying counterparty positions for closure. To achieve this behavior, all positions liquidated in an exit withdrawal are acquired by a designated exit fund wallet. The exit fund does not have any margin requirements, which maximizes the range of positions it can acquire, and is excluded from a number of exchange activities. See [offline operation](#offline-operation) for details.
 
 **Importantly, in order to ensure the solvency of the system, the exit value of positions differs from their order book or index price values.** During exit withdrawals, positions are acquired by the exit fund at the exit price or bankruptcy price. The exit price of a position is the worse of the entry price or current index price, and the exit account value is the total value of a wallet using exit pricing. Exit pricing is used in the acquisition of positions if the exit account value of a wallet is positive, otherwise bankruptcy pricing is used. As a result, wallets with a negative exit account value due to unrealized losses receive zero USDC during a `withdrawExit`. Wallet positions are still closed in this scenario. Exchange includes `loadQuoteQuantityAvailableForExitWithdrawal` to query the exit value of a wallet before exiting or calling `withdrawExit`.
 
-**Wallets that exit during normal online exchange operation are proactively liquidated at the exit price or bankruptcy price by IDEX’s off-chain systems.** In this case, the exited wallet’s positions are [acquired by the insurance fund](#wallet-exited) or [deleveraged](#exit-acquisition-wallet-exited), but the result to the wallet holder is the same. It is still necessary to separately call `withdrawExit` to withdraw the remaining USDC balance of the exited wallet.
+**Wallets that exit during normal online exchange operation are proactively liquidated at the exit price or bankruptcy price by Kuma’s off-chain systems.** In this case, the exited wallet’s positions are [acquired by the insurance fund](#wallet-exited) or [deleveraged](#exit-acquisition-wallet-exited), but the result to the wallet holder is the same. It is still necessary to separately call `withdrawExit` to withdraw the remaining USDC balance of the exited wallet.
 
 ## Delegated Keys
 
@@ -256,7 +256,7 @@ The Ikon controls and governance design is captured in its own [spec](./GOVERNAN
 
 ### Upgradability
 
-Previous versions of IDEX introduced an upgrade model that allows contract logic upgrades within major releases without requiring users to move or redeposit funds. Ikon extends this upgrade model to cover its new capabilities.
+Ikon includes an upgrade model that allows contract logic upgrades within major releases without requiring users to move or redeposit funds.
 
 - In Ikon, exchange state data continues to be stored in the Exchange contract rather than an external contract. Wallet balance information, captured in `_balanceTracking`, is the primary data that must migrate in the case of an upgrade. Ikon includes a lazy balance loading mechanism in the form of BalanceTracking’s `loadBalance*` functions to seamlessly maintain balance information at a minimum of gas overhead.
 - `Constants.EIP_712_DOMAIN_VERSION` is incremented as part of any upgrade. As a result, open orders and active delegated keys must be replaced, and it is unnecessary to migrate `_completedOrderHashes`, `_completedTransferHashes`, `_completedWithdrawalHashes`, `_partiallyFilledOrderQuantitiesInPips`, and `_nonceInvalidations`. `_walletExits` are also unnecessary to migrate as users may exit wallets again.
@@ -266,7 +266,7 @@ The Custodian contract also includes the ability to migrate a held asset from on
 
 ### Offline Operation
 
-While not expected as part of normal operations, IDEX’s off-chain components occasionally may not be available for online operation. Ikon includes support for recovery to online operation and ensures access to user funds during offline operation.
+While not expected as part of normal operations, Kuma’s off-chain components occasionally may not be available for online operation. Ikon includes support for recovery to online operation and ensures access to user funds during offline operation.
 
 - Some functionality, such as [Wallet In Maintenance During System Recovery](#wallet-in-maintenance-during-system-recovery) liquidation and [Exit Fund Closure](#exit-fund-closure) deleveraging are included solely to aid in offline system recovery.
 - Wallet exits provide a mechanism for users to withdraw funds from the exchange in offline scenarios. **The value of open positions during exit withdrawals is different from the value of open positions in other situations.** See [wallet exits](#wallet-exits) for details.
@@ -274,15 +274,15 @@ While not expected as part of normal operations, IDEX’s off-chain components o
 
 ### Nonces and Invalidation
 
-Orders, withdrawals, transfers, and delegated key authorizations include nonces to prevent replay attacks. IDEX uses [version-1 UUIDs](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_1_(date-time_and_MAC_address)) as nonces, which include a timestamp as part of the value.
+Orders, withdrawals, transfers, and delegated key authorizations include nonces to prevent replay attacks. Kuma uses [version-1 UUIDs](https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_1_(date-time_and_MAC_address)) as nonces, which include a timestamp as part of the value.
 
-IDEX’s hybrid off-chain/on-chain architecture is vulnerable to a canceled-order submission attack if the off-chain components are compromised. In this scenario, an attacker gains access to the dispatcher wallet and a set of canceled orders by compromising the off-chain order book. Because the orders themselves include valid signatures from the placing wallet, the contracts cannot distinguish between active orders placed by users and those the user has since canceled. A similar issue applies to [delegated key](#delegated-keys) authorizations.
+Kuma’s hybrid off-chain/on-chain architecture is vulnerable to a canceled-order submission attack if the off-chain components are compromised. In this scenario, an attacker gains access to the dispatcher wallet and a set of canceled orders by compromising the off-chain order book. Because the orders themselves include valid signatures from the placing wallet, the contracts cannot distinguish between active orders placed by users and those the user has since canceled. A similar issue applies to [delegated key](#delegated-keys) authorizations.
 
 Nonce invalidation via `invalidateNonce` allows users to invalidate all orders and delegated keys prior to a specified nonce, making it impossible to submit those orders or use those delegated key authorizations in an attack. The [controls and governance](#controls-and-governance) spec covers the exact mechanics and parameters of the mechanism.
 
 ### Precision and Pips
 
-IDEX Ikon normalizes all quantities to 8 decimals of precision, with 1e-8 referred to as a "pip". Deposits and withdrawals automatically account for USDC native token precision, as do accessors to ChainLink oracle pricing data, using `AssetUnitConversions`’ helper functions. Due to integer rounding issues, many validation calculations add a 1 pip tolerance to expected values.
+Ikon normalizes all quantities to 8 decimals of precision, with 1e-8 referred to as a "pip". Deposits and withdrawals automatically account for USDC native token precision, as do accessors to ChainLink oracle pricing data, using `AssetUnitConversions`’ helper functions. Due to integer rounding issues, many validation calculations add a 1 pip tolerance to expected values.
 
 ### Quote Asset and Quote Token
 
@@ -292,10 +292,10 @@ All Ikon markets are quoted in USD and wallet quote balances are denominated in 
 
 In Ikon, all fees are denominated in USD and are credited or debited from wallets’ quote balances. Maker trade fees may be negative, indicating a fee credit, in the case of maker fee rebate promotions.
 
-## Bug Bounty
+<!-- ## Bug Bounty -->
 
-The smart contracts in this repo are covered by a [bug bounty via Immunefi](https://www.immunefi.com/bounty/idex).
+<!-- The smart contracts in this repo are covered by a [bug bounty via Immunefi](https://www.immunefi.com/bounty/kuma). -->
 
 ## License
 
-The IDEX Ikon Smart Contracts and related code are released under the [MIT License](https://spdx.org/licenses/MIT.html).
+The Kuma Ikon Smart Contracts and related code are released under the [MIT License](https://spdx.org/licenses/MIT.html).

@@ -6,7 +6,7 @@ import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ILayerZeroComposer } from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroComposer.sol";
 import { OFTComposeMsgCodec } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/libs/OFTComposeMsgCodec.sol";
-import { IOFT as IOFT_, MessagingFee, OFTReceipt, SendParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
+import { IOFT, MessagingFee, OFTReceipt, SendParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
 
 interface ICustodian {
   function exchange() external view returns (address);
@@ -14,11 +14,6 @@ interface ICustodian {
 
 interface IExchange {
   function deposit(uint256 quantityInAssetUnits, address destinationWallet) external;
-}
-
-// Re-export symbol for convenience
-interface IOFT is IOFT_ {
-
 }
 
 /*
@@ -116,7 +111,7 @@ contract ExchangeLayerZeroAdapter is ILayerZeroComposer, Owned {
   }
 
   /**
-   * @notice Instantiate a new `ExchangeStargateAdapter` contract
+   * @notice Instantiate a new `ExchangeLayerZeroAdapter` contract
    */
   constructor(
     address custodian_,
@@ -130,14 +125,14 @@ contract ExchangeLayerZeroAdapter is ILayerZeroComposer, Owned {
 
     minimumWithdrawQuantityMultiplier = minimumWithdrawQuantityMultiplier_;
 
-    require(Address.isContract(oft_), "Invalid Stargate address");
+    require(Address.isContract(oft_), "Invalid OFT address");
     oft = IOFT(oft_);
 
     require(Address.isContract(lzEndpoint_), "Invalid LZ Endpoint address");
     lzEndpoint = lzEndpoint_;
 
     require(Address.isContract(quoteAsset_), "Invalid quote asset address");
-    require(oft.token() == quoteAsset_, "Quote asset address does not match Stargate");
+    require(oft.token() == quoteAsset_, "Quote asset address does not match OFT");
     quoteAsset = IERC20(quoteAsset_);
 
     IERC20(quoteAsset).approve(custodian.exchange(), type(uint256).max);
