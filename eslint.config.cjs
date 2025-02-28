@@ -214,7 +214,7 @@ const config = tseslint.config(
           },
           pathGroups: [
             {
-              pattern: '@idexio/**',
+              pattern: '@kumabid/**',
               group: 'internal',
               position: 'before',
             },

@@ -4,14 +4,14 @@ import * as utils from './utils';
 import BaseContract from './BaseContract';
 
 import {
-  IDEXIndexAndOraclePriceAdapter,
-  IDEXIndexAndOraclePriceAdapter__factory,
+  KumaIndexAndOraclePriceAdapter,
+  KumaIndexAndOraclePriceAdapter__factory,
 } from '../../typechain-types';
 
-export default class IDEXIndexAndOraclePriceAdapterContract extends BaseContract<IDEXIndexAndOraclePriceAdapter> {
+export default class KumaIndexAndOraclePriceAdapterContract extends BaseContract<KumaIndexAndOraclePriceAdapter> {
   public constructor(address: string, signerWalletPrivateKey?: string) {
     super(
-      IDEXIndexAndOraclePriceAdapter__factory.connect(
+      KumaIndexAndOraclePriceAdapter__factory.connect(
         address,
         signerWalletPrivateKey
           ? new ethers.Wallet(signerWalletPrivateKey, utils.loadProvider())
@@ -21,22 +21,22 @@ export default class IDEXIndexAndOraclePriceAdapterContract extends BaseContract
   }
 
   public static async deploy(
-    args: Parameters<IDEXIndexAndOraclePriceAdapter__factory['deploy']>,
+    args: Parameters<KumaIndexAndOraclePriceAdapter__factory['deploy']>,
     ownerWalletPrivateKey: string,
-  ): Promise<IDEXIndexAndOraclePriceAdapterContract> {
+  ): Promise<KumaIndexAndOraclePriceAdapterContract> {
     const owner = new ethers.Wallet(
       ownerWalletPrivateKey,
       utils.loadProvider(),
     );
 
-    const contract = await new IDEXIndexAndOraclePriceAdapter__factory(
+    const contract = await new KumaIndexAndOraclePriceAdapter__factory(
       owner,
     ).deploy(...args);
 
     return new this(await (await contract.waitForDeployment()).getAddress());
   }
 
-  public getEthersContract(): IDEXIndexAndOraclePriceAdapter {
+  public getEthersContract(): KumaIndexAndOraclePriceAdapter {
     return this.contract;
   }
 }

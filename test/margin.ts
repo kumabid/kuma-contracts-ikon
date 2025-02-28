@@ -13,18 +13,18 @@ import {
 import { fieldUpgradeDelayInS, IndexPrice } from '../lib';
 import type {
   ChainlinkAggregatorMock,
-  Exchange_v4,
-  IDEXIndexAndOraclePriceAdapter,
+  Exchange_v1,
+  KumaIndexAndOraclePriceAdapter,
   Governance,
 } from '../typechain-types';
 
 describe('Exchange', function () {
   let chainlinkAggregator: ChainlinkAggregatorMock;
-  let exchange: Exchange_v4;
+  let exchange: Exchange_v1;
   let exitFundWallet: SignerWithAddress;
   let governance: Governance;
   let indexPrice: IndexPrice;
-  let indexPriceAdapter: IDEXIndexAndOraclePriceAdapter;
+  let indexPriceAdapter: KumaIndexAndOraclePriceAdapter;
   let indexPriceServiceWallet: SignerWithAddress;
   let insuranceFundWallet: SignerWithAddress;
   let ownerWallet: SignerWithAddress;

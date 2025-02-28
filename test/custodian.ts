@@ -4,8 +4,8 @@ import { ethers, network } from 'hardhat';
 import {
   Custodian,
   Custodian__factory,
-  Exchange_v4,
-  Exchange_v4__factory,
+  Exchange_v1,
+  Exchange_v1__factory,
   ExchangeWithdrawMock,
   ExchangeWithdrawMock__factory,
   Governance,
@@ -51,7 +51,7 @@ describe('Custodian', function () {
   });
 
   describe('deploy', async function () {
-    let exchange: Exchange_v4;
+    let exchange: Exchange_v1;
     let governance: Governance;
 
     beforeEach(async () => {
@@ -195,7 +195,7 @@ describe('Custodian', function () {
 
   describe('setExchange', () => {
     let custodian: Custodian;
-    let ExchangeFactory: Exchange_v4__factory;
+    let ExchangeFactory: Exchange_v1__factory;
     let governanceMock: GovernanceMock;
     let ownerWallet: SignerWithAddress;
     let usdc: USDC;

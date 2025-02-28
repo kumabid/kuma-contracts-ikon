@@ -3,12 +3,12 @@ import { ethers } from 'ethers';
 import * as utils from './utils';
 import BaseContract from './BaseContract';
 
-import { Exchange_v4, Exchange_v4__factory } from '../../typechain-types';
+import { Exchange_v1, Exchange_v1__factory } from '../../typechain-types';
 
-export default class ExchangeContract extends BaseContract<Exchange_v4> {
+export default class ExchangeContract extends BaseContract<Exchange_v1> {
   public constructor(address: string, signerWalletPrivateKey?: string) {
     super(
-      Exchange_v4__factory.connect(
+      Exchange_v1__factory.connect(
         address,
         signerWalletPrivateKey
           ? new ethers.Wallet(signerWalletPrivateKey, utils.loadProvider())
@@ -18,7 +18,7 @@ export default class ExchangeContract extends BaseContract<Exchange_v4> {
   }
 
   public static async deploy(
-    args: Parameters<Exchange_v4__factory['deploy']>,
+    args: Parameters<Exchange_v1__factory['deploy']>,
     libraryAddresses: {
       closureDeleveraging: string;
       depositing: string;
@@ -40,7 +40,7 @@ export default class ExchangeContract extends BaseContract<Exchange_v4> {
     ownerWalletPrivateKey: string,
   ): Promise<ExchangeContract> {
     const linkLibraryAddresses: ConstructorParameters<
-      typeof Exchange_v4__factory
+      typeof Exchange_v1__factory
     >[0] = {
       ['contracts/libraries/ClosureDeleveraging.sol:ClosureDeleveraging']:
         libraryAddresses.closureDeleveraging,
@@ -79,7 +79,7 @@ export default class ExchangeContract extends BaseContract<Exchange_v4> {
       utils.loadProvider(),
     );
 
-    const contract = await new Exchange_v4__factory(
+    const contract = await new Exchange_v1__factory(
       linkLibraryAddresses,
       owner,
     ).deploy(...args);
@@ -87,7 +87,7 @@ export default class ExchangeContract extends BaseContract<Exchange_v4> {
     return new this(await (await contract.waitForDeployment()).getAddress());
   }
 
-  public getEthersContract(): Exchange_v4 {
+  public getEthersContract(): Exchange_v1 {
     return this.contract;
   }
 }

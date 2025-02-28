@@ -81,15 +81,7 @@ abstract contract Owned {
   }
 }
 
-// https://github.com/LayerZero-Labs/LayerZero-v2/blob/1fde89479fdc68b1a54cda7f19efa84483fcacc4/oapp/contracts/oft/interfaces/IOFT.sol
-// https://github.com/stargate-protocol/stargate-v2/blob/main/packages/stg-evm-v2/src/interfaces/IStargate.sol#L22
-// We are not using any Stargate-specific extensions to the IOFT interface, so they are omitted from the
-// interface declared below
-interface IStargate is IOFT {
-
-}
-
-contract ExchangeStargateV2Adapter is ILayerZeroComposer, Owned {
+contract ExchangeLayerZeroAdapter is ILayerZeroComposer, Owned {
   // Address of Custodian contract
   ICustodian public immutable custodian;
   // Must be true or `lzCompose` will revert
@@ -102,8 +94,8 @@ contract ExchangeStargateV2Adapter is ILayerZeroComposer, Owned {
   uint64 public minimumWithdrawQuantityMultiplier;
   // Address of ERC-20 contract used as collateral and quote for all markets
   IERC20 public immutable quoteAsset;
-  // Stargate contract used to send tokens by `withdrawQuoteAsset`
-  IStargate public immutable stargate;
+  // Local OFT contract used to send tokens by `withdrawQuoteAsset`
+  IOFT public immutable oft;
 
   // To convert integer pips to a fractional price shift decimal left by the pip precision of 8
   // decimals places
@@ -119,13 +111,13 @@ contract ExchangeStargateV2Adapter is ILayerZeroComposer, Owned {
   }
 
   /**
-   * @notice Instantiate a new `ExchangeStargateAdapter` contract
+   * @notice Instantiate a new `ExchangeLayerZeroAdapter` contract
    */
   constructor(
     address custodian_,
     uint64 minimumWithdrawQuantityMultiplier_,
     address lzEndpoint_,
-    address stargate_,
+    address oft_,
     address quoteAsset_
   ) Owned() {
     require(Address.isContract(custodian_), "Invalid Custodian address");
@@ -133,18 +125,18 @@ contract ExchangeStargateV2Adapter is ILayerZeroComposer, Owned {
 
     minimumWithdrawQuantityMultiplier = minimumWithdrawQuantityMultiplier_;
 
-    require(Address.isContract(stargate_), "Invalid Stargate address");
-    stargate = IStargate(stargate_);
+    require(Address.isContract(oft_), "Invalid OFT address");
+    oft = IOFT(oft_);
 
     require(Address.isContract(lzEndpoint_), "Invalid LZ Endpoint address");
     lzEndpoint = lzEndpoint_;
 
     require(Address.isContract(quoteAsset_), "Invalid quote asset address");
-    require(stargate.token() == quoteAsset_, "Quote asset address does not match Stargate");
+    require(oft.token() == quoteAsset_, "Quote asset address does not match OFT");
     quoteAsset = IERC20(quoteAsset_);
 
     IERC20(quoteAsset).approve(custodian.exchange(), type(uint256).max);
-    IERC20(quoteAsset).approve(stargate_, type(uint256).max);
+    IERC20(quoteAsset).approve(oft_, type(uint256).max);
   }
 
   /**
@@ -168,7 +160,7 @@ contract ExchangeStargateV2Adapter is ILayerZeroComposer, Owned {
     bytes calldata /* _extraData */
   ) public payable override {
     require(msg.sender == lzEndpoint, "Caller must be LZ Endpoint");
-    require(_from == address(stargate), "OApp must be Stargate");
+    require(_from == address(oft), "Invalid OApp");
 
     // https://github.com/LayerZero-Labs/LayerZero-v2/blob/1fde89479fdc68b1a54cda7f19efa84483fcacc4/oapp/contracts/oft/libs/OFTComposeMsgCodec.sol#L52
     uint256 amountLD = OFTComposeMsgCodec.amountLD(_message);
@@ -216,9 +208,9 @@ contract ExchangeStargateV2Adapter is ILayerZeroComposer, Owned {
     SendParam memory sendParam = _getSendParamForWithdraw(destinationWallet, quantity, payload);
 
     // https://github.com/LayerZero-Labs/LayerZero-v2/blob/1fde89479fdc68b1a54cda7f19efa84483fcacc4/oapp/contracts/oft/interfaces/IOFT.sol#L127C14-L127C23
-    MessagingFee memory messagingFee = stargate.quoteSend(sendParam, false);
+    MessagingFee memory messagingFee = oft.quoteSend(sendParam, false);
 
-    try stargate.send{ value: messagingFee.nativeFee }(sendParam, messagingFee, payable(address(this))) {} catch (
+    try oft.send{ value: messagingFee.nativeFee }(sendParam, messagingFee, payable(address(this))) {} catch (
       bytes memory errorData
     ) {
       // If the swap fails, redeposit funds into Exchange so wallet can retry
@@ -257,17 +249,17 @@ contract ExchangeStargateV2Adapter is ILayerZeroComposer, Owned {
       uint8 poolDecimals
     )
   {
-    uint256 quantityInAssetUnits = _pipsToAssetUnits(quantity, stargate.sharedDecimals());
+    uint256 quantityInAssetUnits = _pipsToAssetUnits(quantity, oft.sharedDecimals());
 
     SendParam memory sendParam = _getSendParamForWithdraw(destinationWallet, quantityInAssetUnits, payload);
 
-    (, , OFTReceipt memory receipt) = stargate.quoteOFT(sendParam);
+    (, , OFTReceipt memory receipt) = oft.quoteOFT(sendParam);
 
     estimatedWithdrawQuantityInAssetUnits = receipt.amountReceivedLD;
     minimumWithdrawQuantityInAssetUnits =
       (quantityInAssetUnits * minimumWithdrawQuantityMultiplier) /
       PIP_PRICE_MULTIPLIER;
-    poolDecimals = stargate.sharedDecimals();
+    poolDecimals = oft.sharedDecimals();
   }
 
   /**
@@ -287,7 +279,7 @@ contract ExchangeStargateV2Adapter is ILayerZeroComposer, Owned {
         abi.encode(layerZeroEndpointIds[i])
       );
 
-      MessagingFee memory messagingFee = stargate.quoteSend(sendParam, false);
+      MessagingFee memory messagingFee = oft.quoteSend(sendParam, false);
       gasFeesInAssetUnits[i] = messagingFee.nativeFee;
     }
   }

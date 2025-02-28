@@ -11,7 +11,7 @@ import { String } from "../libraries/String.sol";
 import { IExchange, IIndexPriceAdapter, IOraclePriceAdapter } from "../libraries/Interfaces.sol";
 import { IndexPrice, Market } from "../libraries/Structs.sol";
 
-contract IDEXIndexAndOraclePriceAdapter is IIndexPriceAdapter, IOraclePriceAdapter, Owned {
+contract KumaIndexAndOraclePriceAdapter is IIndexPriceAdapter, IOraclePriceAdapter, Owned {
   bytes32 public constant EIP_712_TYPE_HASH_INDEX_PRICE =
     keccak256("IndexPrice(string baseAssetSymbol,string quoteAssetSymbol,uint64 timestampInMs,string price)");
   // Address whitelisted to call `setActive`
@@ -37,7 +37,7 @@ contract IDEXIndexAndOraclePriceAdapter is IIndexPriceAdapter, IOraclePriceAdapt
   }
 
   /**
-   * @notice Instantiate a new `IDEXIndexAndOraclePriceAdapter` contract
+   * @notice Instantiate a new `KumaIndexAndOraclePriceAdapter` contract
    *
    * @param activator_ Address whitelisted to call `setActive`
    * @param indexPriceServiceWallets_ Addresses of IPS wallets whitelisted to sign index prices
