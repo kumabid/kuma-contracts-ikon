@@ -1,7 +1,7 @@
 import { ethers, network } from 'hardhat';
 import { v1 as uuidv1, v4 as uuidv4 } from 'uuid';
 
-import { Exchange_v4 } from '../typechain-types';
+import { Exchange_v1 } from '../typechain-types';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import { uuidToHexString } from '../lib';
 import {
@@ -16,7 +16,7 @@ describe('Exchange', function () {
   });
 
   describe('invalidateNonce', async function () {
-    let exchange: Exchange_v4;
+    let exchange: Exchange_v1;
     let traderWallet: SignerWithAddress;
 
     beforeEach(async () => {
@@ -90,7 +90,7 @@ describe('Exchange', function () {
   });
 
   describe('loadLastNonceInvalidationForWallet', async function () {
-    let exchange: Exchange_v4;
+    let exchange: Exchange_v1;
     let traderWallet: SignerWithAddress;
 
     beforeEach(async () => {

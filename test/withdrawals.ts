@@ -24,18 +24,18 @@ import {
 
 import type { Withdrawal } from '../lib';
 import type {
-  Exchange_v4,
-  IDEXIndexAndOraclePriceAdapter,
+  Exchange_v1,
+  KumaIndexAndOraclePriceAdapter,
   USDC,
 } from '../typechain-types';
 import type { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 
 describe('Exchange', function () {
   let dispatcherWallet: SignerWithAddress;
-  let exchange: Exchange_v4;
+  let exchange: Exchange_v1;
   let exitFundWallet: SignerWithAddress;
   let feeWallet: SignerWithAddress;
-  let indexPriceAdapter: IDEXIndexAndOraclePriceAdapter;
+  let indexPriceAdapter: KumaIndexAndOraclePriceAdapter;
   let indexPriceServiceWallet: SignerWithAddress;
   let signature: string;
   let traderWallet: SignerWithAddress;

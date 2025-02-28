@@ -3,8 +3,8 @@ import { ethers, network } from 'hardhat';
 import { deployAndAssociateContracts, expect } from './helpers';
 import {
   Custodian,
-  Exchange_v4,
-  Exchange_v4__factory,
+  Exchange_v1,
+  Exchange_v1__factory,
   Governance,
   Governance__factory,
   USDC,
@@ -444,8 +444,8 @@ describe('Governance', function () {
   });
 
   describe('initiateExchangeUpgrade', () => {
-    let exchange: Exchange_v4;
-    let ExchangeFactory: Exchange_v4__factory;
+    let exchange: Exchange_v1;
+    let ExchangeFactory: Exchange_v1__factory;
     let governance: Governance;
     let ownerWallet: SignerWithAddress;
     let usdc: USDC;
@@ -514,7 +514,7 @@ describe('Governance', function () {
   });
 
   describe('cancelExchangeUpgrade', () => {
-    let ExchangeFactory: Exchange_v4__factory;
+    let ExchangeFactory: Exchange_v1__factory;
     let governance: Governance;
     let ownerWallet: SignerWithAddress;
 
@@ -558,7 +558,7 @@ describe('Governance', function () {
 
   describe('finalizeExchangeUpgrade', () => {
     let custodian: Custodian;
-    let ExchangeFactory: Exchange_v4__factory;
+    let ExchangeFactory: Exchange_v1__factory;
     let governance: Governance;
     let ownerWallet: SignerWithAddress;
     let usdc: USDC;

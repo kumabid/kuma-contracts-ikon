@@ -15,9 +15,9 @@ import {
   indexPriceToArgumentStruct,
 } from '../lib';
 import type {
-  Exchange_v4,
+  Exchange_v1,
   FundingMultiplierMock,
-  IDEXIndexAndOraclePriceAdapter,
+  KumaIndexAndOraclePriceAdapter,
   USDC,
 } from '../typechain-types';
 import {
@@ -36,9 +36,9 @@ import {
 
 describe('Exchange', function () {
   let dispatcherWallet: SignerWithAddress;
-  let exchange: Exchange_v4;
+  let exchange: Exchange_v1;
   let indexPrice: IndexPrice;
-  let indexPriceAdapter: IDEXIndexAndOraclePriceAdapter;
+  let indexPriceAdapter: KumaIndexAndOraclePriceAdapter;
   let indexPriceServiceWallet: SignerWithAddress;
   let usdc: USDC;
 
@@ -728,7 +728,7 @@ async function getMidnightTomorrowInSecondsUTC(): Promise<number> {
 }
 
 const NO_FUNDING_MULTIPLIER = (BigInt(-2) ** BigInt(63)).toString();
-async function loadFundingMultipliers(exchange: Exchange_v4) {
+async function loadFundingMultipliers(exchange: Exchange_v1) {
   const quartets: string[][] = [];
   try {
     let i = 0;

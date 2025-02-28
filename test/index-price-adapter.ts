@@ -22,9 +22,9 @@ import {
 import type {
   ExchangeIndexPriceAdapterMock,
   ExchangeIndexPriceAdapterMock__factory,
-  Exchange_v4,
-  IDEXIndexAndOraclePriceAdapter,
-  IDEXIndexAndOraclePriceAdapter__factory,
+  Exchange_v1,
+  KumaIndexAndOraclePriceAdapter,
+  KumaIndexAndOraclePriceAdapter__factory,
   PythIndexPriceAdapter,
   PythIndexPriceAdapter__factory,
   PythMock,
@@ -36,9 +36,9 @@ import type {
 } from '../typechain-types';
 import type { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 
-describe('IDEXIndexAndOraclePriceAdapter', function () {
+describe('KumaIndexAndOraclePriceAdapter', function () {
   let ExchangeIndexPriceAdapterMockFactory: ExchangeIndexPriceAdapterMock__factory;
-  let IDEXIndexAndOraclePriceAdapterFactory: IDEXIndexAndOraclePriceAdapter__factory;
+  let KumaIndexAndOraclePriceAdapterFactory: KumaIndexAndOraclePriceAdapter__factory;
   let indexPriceServiceWallet: SignerWithAddress;
   let owner: SignerWithAddress;
 
@@ -47,8 +47,8 @@ describe('IDEXIndexAndOraclePriceAdapter', function () {
     ExchangeIndexPriceAdapterMockFactory = await ethers.getContractFactory(
       'ExchangeIndexPriceAdapterMock',
     );
-    IDEXIndexAndOraclePriceAdapterFactory = await ethers.getContractFactory(
-      'IDEXIndexAndOraclePriceAdapter',
+    KumaIndexAndOraclePriceAdapterFactory = await ethers.getContractFactory(
+      'KumaIndexAndOraclePriceAdapter',
     );
     indexPriceServiceWallet = (await ethers.getSigners())[5];
     [owner] = await ethers.getSigners();
@@ -56,14 +56,14 @@ describe('IDEXIndexAndOraclePriceAdapter', function () {
 
   describe('deploy', async function () {
     it('should work for valid activator and IPS wallet', async () => {
-      await IDEXIndexAndOraclePriceAdapterFactory.deploy(owner.address, [
+      await KumaIndexAndOraclePriceAdapterFactory.deploy(owner.address, [
         indexPriceServiceWallet.address,
       ]);
     });
 
     it('should revert for invalid activator', async () => {
       await expect(
-        IDEXIndexAndOraclePriceAdapterFactory.deploy(ethers.ZeroAddress, [
+        KumaIndexAndOraclePriceAdapterFactory.deploy(ethers.ZeroAddress, [
           indexPriceServiceWallet.address,
         ]),
       ).to.eventually.be.rejectedWith(/invalid activator/i);
@@ -71,13 +71,13 @@ describe('IDEXIndexAndOraclePriceAdapter', function () {
 
     it('should revert for missing IPS wallets', async () => {
       await expect(
-        IDEXIndexAndOraclePriceAdapterFactory.deploy(owner.address, []),
+        KumaIndexAndOraclePriceAdapterFactory.deploy(owner.address, []),
       ).to.eventually.be.rejectedWith(/missing IPS wallets/i);
     });
 
     it('should revert for invalid IPS wallet', async () => {
       await expect(
-        IDEXIndexAndOraclePriceAdapterFactory.deploy(owner.address, [
+        KumaIndexAndOraclePriceAdapterFactory.deploy(owner.address, [
           ethers.ZeroAddress,
         ]),
       ).to.eventually.be.rejectedWith(/invalid IPS wallet/i);
@@ -85,16 +85,16 @@ describe('IDEXIndexAndOraclePriceAdapter', function () {
   });
 
   describe('setActive', async function () {
-    let exchange: Exchange_v4;
-    let indexPriceAdapter: IDEXIndexAndOraclePriceAdapter;
-    let oldIndexPriceAdapter: IDEXIndexAndOraclePriceAdapter;
+    let exchange: Exchange_v1;
+    let indexPriceAdapter: KumaIndexAndOraclePriceAdapter;
+    let oldIndexPriceAdapter: KumaIndexAndOraclePriceAdapter;
 
     beforeEach(async () => {
       const results = await deployContractsExceptCustodian(owner);
       exchange = results.exchange;
       oldIndexPriceAdapter = results.indexPriceAdapter;
 
-      indexPriceAdapter = await IDEXIndexAndOraclePriceAdapterFactory.deploy(
+      indexPriceAdapter = await KumaIndexAndOraclePriceAdapterFactory.deploy(
         owner.address,
         [indexPriceServiceWallet.address],
       );
@@ -182,10 +182,10 @@ describe('IDEXIndexAndOraclePriceAdapter', function () {
 
   describe('loadPriceForBaseAssetSymbol', async function () {
     let exchangeMock: ExchangeIndexPriceAdapterMock;
-    let indexPriceAdapter: IDEXIndexAndOraclePriceAdapter;
+    let indexPriceAdapter: KumaIndexAndOraclePriceAdapter;
 
     beforeEach(async () => {
-      indexPriceAdapter = await IDEXIndexAndOraclePriceAdapterFactory.deploy(
+      indexPriceAdapter = await KumaIndexAndOraclePriceAdapterFactory.deploy(
         owner.address,
         [indexPriceServiceWallet.address],
       );
@@ -255,10 +255,10 @@ describe('IDEXIndexAndOraclePriceAdapter', function () {
   });
 
   describe('validateIndexPricePayload', async () => {
-    let indexPriceAdapter: IDEXIndexAndOraclePriceAdapter;
+    let indexPriceAdapter: KumaIndexAndOraclePriceAdapter;
 
     beforeEach(async () => {
-      indexPriceAdapter = await IDEXIndexAndOraclePriceAdapterFactory.deploy(
+      indexPriceAdapter = await KumaIndexAndOraclePriceAdapterFactory.deploy(
         owner.address,
         [indexPriceServiceWallet.address],
       );
@@ -300,11 +300,11 @@ describe('IDEXIndexAndOraclePriceAdapter', function () {
   });
 
   describe('validateInitialIndexPricePayloadAdmin', async () => {
-    let exchange: Exchange_v4;
-    let indexPriceAdapter: IDEXIndexAndOraclePriceAdapter;
+    let exchange: Exchange_v1;
+    let indexPriceAdapter: KumaIndexAndOraclePriceAdapter;
 
     beforeEach(async () => {
-      indexPriceAdapter = await IDEXIndexAndOraclePriceAdapterFactory.deploy(
+      indexPriceAdapter = await KumaIndexAndOraclePriceAdapterFactory.deploy(
         owner.address,
         [indexPriceServiceWallet.address],
       );
@@ -604,7 +604,7 @@ describe('PythIndexPriceAdapter', function () {
 
   describe('setActive', async function () {
     let adapter: PythIndexPriceAdapter;
-    let exchange: Exchange_v4;
+    let exchange: Exchange_v1;
     const priceId = ethers.randomBytes(32);
 
     beforeEach(async () => {
@@ -1057,9 +1057,9 @@ describe('StorkIndexAndOraclePriceAdapter', function () {
   });
 
   describe('setActive', async function () {
-    let exchange: Exchange_v4;
+    let exchange: Exchange_v1;
     let indexPriceAdapter: StorkIndexAndOraclePriceAdapter;
-    let oldIndexPriceAdapter: IDEXIndexAndOraclePriceAdapter;
+    let oldIndexPriceAdapter: KumaIndexAndOraclePriceAdapter;
 
     beforeEach(async () => {
       const results = await deployContractsExceptCustodian(ownerWallet);
@@ -1191,7 +1191,7 @@ describe('StorkIndexAndOraclePriceAdapter', function () {
   });
 
   describe('validateInitialIndexPricePayloadAdmin', async function () {
-    let exchange: Exchange_v4;
+    let exchange: Exchange_v1;
     let indexPriceAdapter: StorkIndexAndOraclePriceAdapter;
     let storkAdapter: StorkIndexAndOraclePriceAdapter;
 

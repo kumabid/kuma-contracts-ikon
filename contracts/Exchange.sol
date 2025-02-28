@@ -36,7 +36,7 @@ import { DeleverageType, LiquidationType, OrderSide } from "./libraries/Enums.so
 import { IBridgeAdapter, ICustodian, IExchange, IIndexPriceAdapter, IOraclePriceAdapter } from "./libraries/Interfaces.sol";
 
 // solhint-disable-next-line contract-name-camelcase
-contract Exchange_v4 is EIP712, IExchange, Owned {
+contract Exchange_v1 is EIP712, IExchange, Owned {
   using BalanceTracking for BalanceTracking.Storage;
   using NonceInvalidations for mapping(address => NonceInvalidation[]);
 

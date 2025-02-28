@@ -16,3 +16,6 @@ indexArguments.js
 
 # Yarn
 .yarn/install-state.gz
+
+# Webstorm
+.idea
