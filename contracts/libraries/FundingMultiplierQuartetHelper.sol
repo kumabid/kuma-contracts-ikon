@@ -131,25 +131,15 @@ library FundingMultiplierQuartetHelper {
     // Calculate the timestamp of the very first multiplier
     uint64 firstTimestampInMs = lastTimestampInMs - ((totalNumberOfMultipliers - 1) * Constants.FUNDING_PERIOD_IN_MS);
 
-    if (targetTimestampInMs < firstTimestampInMs) {
-      // If the target falls before the first stored multiplier, return the first index and offset
-      index = 0;
-      offset = 0;
-    } else if (targetTimestampInMs > lastTimestampInMs) {
-      // If the target falls after the last stored multiplier, return the last index and offset
-      index = self.length - 1;
-      offset = _calculateNumberOfMultipliersInQuartet(self[self.length - 1]) - 1;
-    } else {
-      // Calculate the number of multipliers from the first published timestamp to the target timestamp, both inclusive
-      uint64 numberOfMultipliersFromFirstToTargetTimestamp = 1 +
-        ((targetTimestampInMs - firstTimestampInMs) / Constants.FUNDING_PERIOD_IN_MS);
+    // Calculate the number of multipliers from the first published timestamp to the target timestamp, both inclusive
+    uint64 numberOfMultipliersFromFirstToTargetTimestamp = 1 +
+      ((targetTimestampInMs - firstTimestampInMs) / Constants.FUNDING_PERIOD_IN_MS);
 
-      // Calculate index and offset of target timestamp
-      index = Math.divideRoundUp(numberOfMultipliersFromFirstToTargetTimestamp, _QUARTET_SIZE) - 1;
-      offset = numberOfMultipliersFromFirstToTargetTimestamp % _QUARTET_SIZE == 0
-        ? 3
-        : (numberOfMultipliersFromFirstToTargetTimestamp % _QUARTET_SIZE) - 1;
-    }
+    // Calculate index and offset of target timestamp
+    index = Math.divideRoundUp(numberOfMultipliersFromFirstToTargetTimestamp, _QUARTET_SIZE) - 1;
+    offset = numberOfMultipliersFromFirstToTargetTimestamp % _QUARTET_SIZE == 0
+      ? 3
+      : (numberOfMultipliersFromFirstToTargetTimestamp % _QUARTET_SIZE) - 1;
   }
 
   /**

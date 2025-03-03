@@ -438,7 +438,9 @@ library BalanceTracking {
 
       balance.isMigrated = true;
       balance.balance = migratedBalanceStruct.balance;
-      balance.lastUpdateTimestampInMs = migratedBalanceStruct.lastUpdateTimestampInMs;
+      // All outstanding funding payments on the migration source will be included upon quote balance migration so
+      // update last funding timestamp to current block timestamp
+      balance.lastUpdateTimestampInMs = block.timestamp;
       balance.costBasis = migratedBalanceStruct.costBasis;
     }
 
