@@ -23,4 +23,8 @@ contract BalanceMigrationSourceMock {
     return
       Balance({ isMigrated: true, balance: balances[wallet][assetSymbol], lastUpdateTimestampInMs: 0, costBasis: 0 });
   }
+
+  function loadOutstandingWalletFunding(address) external view returns (int64) {
+    return 0;
+  }
 }

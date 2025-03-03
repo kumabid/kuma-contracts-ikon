@@ -3,10 +3,14 @@ import { expect } from 'chai';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import { ethers, network } from 'hardhat';
 
-import type {
+import {
   ChainlinkOraclePriceAdapter,
   Exchange_v1,
+  Exchange_v1__factory,
+  Governance,
   KumaIndexAndOraclePriceAdapter,
+  type KumaIndexAndOraclePriceAdapter__factory,
+  USDC,
 } from '../typechain-types';
 import type { MarketStruct } from '../typechain-types/contracts/Exchange.sol/Exchange_v1';
 import {
@@ -21,10 +25,14 @@ import { decimalToPips, indexPriceToArgumentStruct } from '../lib';
 
 describe('Exchange', function () {
   let exchange: Exchange_v1;
+  let ExchangeFactory: Exchange_v1__factory;
+  let governance: Governance;
+  let KumaIndexAndOraclePriceAdapterFactory: KumaIndexAndOraclePriceAdapter__factory;
   let indexPriceAdapter: KumaIndexAndOraclePriceAdapter;
   let indexPriceServiceWallet: SignerWithAddress;
   let marketStruct: MarketStruct;
   let ownerWallet: SignerWithAddress;
+  let usdc: USDC;
 
   before(async () => {
     await network.provider.send('hardhat_reset');
@@ -44,7 +52,12 @@ describe('Exchange', function () {
       ethers.ZeroAddress,
       [baseAssetSymbol, 'XYZ'],
     );
+    ExchangeFactory = results.ExchangeFactory;
     exchange = results.exchange;
+    governance = results.governance;
+    KumaIndexAndOraclePriceAdapterFactory = await ethers.getContractFactory(
+      'KumaIndexAndOraclePriceAdapter',
+    );
     indexPriceAdapter = results.indexPriceAdapter;
     indexPriceServiceWallet = ownerWallet;
     marketStruct = {
@@ -64,6 +77,7 @@ describe('Exchange', function () {
         minimumPositionSize: '10000000',
       },
     };
+    usdc = results.usdc;
   });
 
   describe('activateMarket', async function () {
@@ -102,6 +116,34 @@ describe('Exchange', function () {
       const events = await exchange.queryFilter(exchange.filters.MarketAdded());
       expect(events).to.have.lengthOf(2);
       expect(events[1].args?.baseAssetSymbol).to.equal('XYZ');
+    });
+
+    it('should migrate active state from balance migration source', async () => {
+      marketStruct.baseAssetSymbol = 'XYZ';
+      await exchange.addMarket(marketStruct);
+      await exchange.activateMarket('XYZ');
+
+      indexPriceAdapter = await KumaIndexAndOraclePriceAdapterFactory.deploy(
+        ownerWallet.address,
+        [indexPriceServiceWallet.address],
+      );
+      const newExchange = await ExchangeFactory.deploy(
+        await exchange.getAddress(),
+        ownerWallet.address,
+        ownerWallet.address,
+        [await indexPriceAdapter.getAddress()],
+        ownerWallet.address,
+        await (
+          await ethers.getContractFactory('OraclePriceAdapterMock')
+        ).deploy(),
+        await usdc.getAddress(),
+      );
+      await governance.initiateExchangeUpgrade(await newExchange.getAddress());
+      await governance.finalizeExchangeUpgrade(await newExchange.getAddress());
+
+      await newExchange.addMarket(marketStruct);
+      const market = await newExchange.loadMarket(0);
+      expect(market.isActive).to.equal(true);
     });
 
     it('should revert when not called by admin', async () => {

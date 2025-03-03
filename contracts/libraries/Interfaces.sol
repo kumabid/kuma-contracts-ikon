@@ -158,6 +158,11 @@ interface IExchange {
   function loadMarket(uint8 index) external view returns (Market memory);
 
   /**
+   * @notice Calculate total outstanding funding payments
+   */
+  function loadOutstandingWalletFunding(address wallet) external view returns (int64);
+
+  /**
    * @notice Load the address of the Custodian contract
    *
    * @return The address of the Custodian contract
