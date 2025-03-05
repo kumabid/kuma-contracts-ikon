@@ -11,7 +11,7 @@ library Constants {
 
   string public constant EIP_712_DOMAIN_NAME = "Kuma";
 
-  string public constant EIP_712_DOMAIN_VERSION = "1.0.0";
+  string public constant EIP_712_DOMAIN_VERSION = "1.0.0-sandbox";
 
   // https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator
   bytes32 public constant EIP_712_TYPE_HASH_DOMAIN =

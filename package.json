@@ -1,6 +1,6 @@
 {
   "name": "@kumabid/kuma-contracts-ikon",
-  "version": "1.0.0-sandbox",
+  "version": "1.0.0-sandbox.1",
   "description": "Collects source code, tests, and documentation for the Kuma Ikon release Solidity contracts",
   "homepage": "https://github.com/kumabid/kuma-contracts-ikon",
   "repository": "https://github.com/kumabid/kuma-contracts-ikon",
