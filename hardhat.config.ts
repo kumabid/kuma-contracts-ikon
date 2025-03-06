@@ -97,6 +97,16 @@ const solidity = process.env.COVERAGE
             viaIR: true,
           },
         },
+        'contracts/libraries/Trading.sol': {
+          version: SOLC_VERSION,
+          settings: {
+            optimizer: {
+              enabled: true,
+              runs: 20000,
+            },
+            viaIR: true,
+          },
+        },
       },
     };
 

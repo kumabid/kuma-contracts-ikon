@@ -2,12 +2,15 @@
 
 pragma solidity 0.8.18;
 
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+
 import { Constants } from "./Constants.sol";
 import { LiquidationValidations } from "./LiquidationValidations.sol";
 import { MarketHelper } from "./MarketHelper.sol";
 import { Math } from "./Math.sol";
 import { OrderSide } from "./Enums.sol";
 import { SortedStringSet } from "./SortedStringSet.sol";
+import { String } from "./String.sol";
 import { IExchange, IOraclePriceAdapter } from "./Interfaces.sol";
 import { Balance, ExecuteTradeArguments, Market, MarketOverrides, Transfer, Withdrawal } from "./Structs.sol";
 
@@ -434,8 +437,17 @@ library BalanceTracking {
 
       balance.isMigrated = true;
       balance.balance = migratedBalanceStruct.balance;
-      balance.lastUpdateTimestampInMs = migratedBalanceStruct.lastUpdateTimestampInMs;
       balance.costBasis = migratedBalanceStruct.costBasis;
+
+      bool isQuoteBalance = String.isEqual(assetSymbol, Constants.QUOTE_ASSET_SYMBOL);
+      if (isQuoteBalance) {
+        // Funding multipliers are not migrated, so include any outstanding amount in the quote balance migration
+        migratedBalanceStruct.balance += self.migrationSource.loadOutstandingWalletFunding(wallet);
+      } else {
+        // All outstanding funding payments on the migration source will be included upon quote balance migration so
+        // update any base position last update timestamps to current block timestamp
+        balance.lastUpdateTimestampInMs = SafeCast.toUint64(block.timestamp * 1000);
+      }
     }
 
     return balance;
