@@ -446,7 +446,7 @@ library BalanceTracking {
       } else {
         // All outstanding funding payments on the migration source will be included upon quote balance migration so
         // update any base position last update timestamps to current block timestamp
-        balance.lastUpdateTimestampInMs = SafeCast.toUint64(block.timestamp);
+        balance.lastUpdateTimestampInMs = SafeCast.toUint64(block.timestamp * 1000);
       }
     }
 
