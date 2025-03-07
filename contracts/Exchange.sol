@@ -44,8 +44,6 @@ contract Exchange_v1 is EIP712, IExchange, Owned {
 
   // Balance tracking
   BalanceTracking.Storage private _balanceTracking;
-  // Mapping of wallet => list of base asset symbols with open positions
-  mapping(address => string[]) public baseAssetSymbolsWithOpenPositionsByWallet;
   // Mapping of order wallet hash => isComplete
   mapping(bytes32 => bool) private _completedOrderHashes;
   // Transfers - mapping of transfer wallet hash => isComplete
@@ -328,7 +326,11 @@ contract Exchange_v1 is EIP712, IExchange, Owned {
 
   modifier onlyDispatcherWhenExitFundHasNoPositions() {
     _onlyDispatcher();
-    require(baseAssetSymbolsWithOpenPositionsByWallet[exitFundWallet].length == 0, "Exit Fund has open positions");
+    // TODO Migrate?
+    require(
+      _balanceTracking.trackingByWallet[exitFundWallet].baseAssetSymbolsWithOpenPositions.length == 0,
+      "Exit Fund has open positions"
+    );
     _;
   }
 
@@ -631,7 +633,6 @@ contract Exchange_v1 is EIP712, IExchange, Owned {
         Funding.loadOutstandingWalletFunding_delegatecall(
           wallet,
           _balanceTracking,
-          baseAssetSymbolsWithOpenPositionsByWallet,
           fundingMultipliersByBaseAssetSymbol,
           lastFundingRatePublishTimestampInMsByBaseAssetSymbol,
           _marketsByBaseAssetSymbol

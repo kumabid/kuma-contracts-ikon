@@ -87,6 +87,10 @@ describe('Exchange with balance migration source', function () {
       feeWallet,
       indexPriceServiceWallet,
       insuranceFundWallet,
+      0,
+      true,
+      ethers.ZeroAddress,
+      ['ETH', 'BTC'],
     );
     chainlinkAggregator = results.chainlinkAggregator;
     custodian = results.custodian;
@@ -154,7 +158,7 @@ describe('Exchange with balance migration source', function () {
   });
 
   describe('executeTrade', () => {
-    it.only('should work for limit orders with maker sell with migrated open positions', async function () {
+    it('should work for limit orders with maker sell with migrated open positions with outstanding funding payments', async function () {
       // Open positions //
 
       await exchange
@@ -277,29 +281,6 @@ describe('Exchange with balance migration source', function () {
           minimumPositionSize: '10000000',
         },
       });
-      console.log(
-        await newExchange.lastFundingRatePublishTimestampInMsByBaseAssetSymbol(
-          baseAssetSymbol,
-        ),
-      );
-      console.log(
-        await newExchange.fundingMultipliersByBaseAssetSymbol(
-          baseAssetSymbol,
-          0,
-        ),
-      );
-      console.log(
-        await exchange.loadBalanceStructBySymbol(
-          trader1Wallet.address,
-          baseAssetSymbol,
-        ),
-      );
-      console.log(
-        await newExchange.loadBalanceStructBySymbol(
-          trader2Wallet.address,
-          baseAssetSymbol,
-        ),
-      );
 
       expect(
         (
@@ -371,6 +352,210 @@ describe('Exchange with balance migration source', function () {
           await newExchange.getAddress(),
         ),
       );
+      await newExchange
+        .connect(dispatcherWallet)
+        .executeTrade(
+          ...getExecuteTradeArguments(
+            buyOrder,
+            buyOrderSignature,
+            sellOrder,
+            sellOrderSignature,
+            trade,
+          ),
+        );
+    });
+
+    it.only('should work for limit orders with maker sell with migrated open positions in multiple markets', async function () {
+      // Open positions //
+
+      await exchange
+        .connect(dispatcherWallet)
+        .executeTrade(
+          ...getExecuteTradeArguments(
+            buyOrder,
+            buyOrderSignature,
+            sellOrder,
+            sellOrderSignature,
+            trade,
+          ),
+        );
+
+      await addAndActivateMarket(dispatcherWallet, exchange, 'BTC');
+      await fundWallets(
+        [trader1Wallet, trader2Wallet],
+        dispatcherWallet,
+        exchange,
+        usdc,
+        '12000.00000000',
+      );
+
+      await executeTrade(
+        exchange,
+        dispatcherWallet,
+        await buildIndexPriceWithValue(
+          await exchange.getAddress(),
+          indexPriceServiceWallet,
+          '24000.00000000',
+          'BTC',
+        ),
+        await indexPriceAdapter.getAddress(),
+        trader1Wallet,
+        trader2Wallet,
+        'BTC',
+        '24000.00000000',
+      );
+
+      expect(
+        (
+          await exchange.loadBalanceBySymbol(
+            trader2Wallet.address,
+            baseAssetSymbol,
+          )
+        ).toString(),
+      ).to.equal(decimalToPips('5.00000000'));
+      expect(
+        (
+          await exchange.loadBalanceBySymbol(trader2Wallet.address, 'BTC')
+        ).toString(),
+      ).to.equal(decimalToPips('10.00000000'));
+
+      expect(
+        (
+          await exchange.loadBalanceStructBySymbol(
+            trader1Wallet.address,
+            baseAssetSymbol,
+          )
+        ).balance.toString(),
+      ).to.equal(decimalToPips('-5.00000000'));
+      expect(
+        (
+          await exchange.loadBalanceBySymbol(trader1Wallet.address, 'BTC')
+        ).toString(),
+      ).to.equal(decimalToPips('-10.00000000'));
+
+      // Deploy new Exchange contract //
+
+      const oraclePriceAdapter = await (
+        await (await ethers.getContractFactory('ChainlinkOraclePriceAdapter'))
+          .connect(ownerWallet)
+          .deploy(
+            [baseAssetSymbol, 'BTC'],
+            [
+              await chainlinkAggregator.getAddress(),
+              await chainlinkAggregator.getAddress(),
+            ],
+          )
+      ).waitForDeployment();
+      const newIndexPriceAdapter = await (
+        await (
+          await ethers.getContractFactory('KumaIndexAndOraclePriceAdapter')
+        )
+          .connect(ownerWallet)
+          .deploy(ownerWallet.address, [indexPriceServiceWallet.address])
+      ).waitForDeployment();
+      const newExchange = await (
+        await (await deployLibraryContracts())
+          .connect(ownerWallet)
+          .deploy(
+            await exchange.getAddress(),
+            exitFundWallet.address,
+            feeWallet.address,
+            [await newIndexPriceAdapter.getAddress()],
+            insuranceFundWallet.address,
+            await oraclePriceAdapter.getAddress(),
+            await usdc.getAddress(),
+          )
+      ).waitForDeployment();
+      await newIndexPriceAdapter.setActive(await newExchange.getAddress());
+
+      // Upgrade to new Exchange //
+
+      await governance.initiateExchangeUpgrade(await newExchange.getAddress());
+      await governance.finalizeExchangeUpgrade(await newExchange.getAddress());
+      await Promise.all([
+        (
+          await newExchange.setCustodian(await custodian.getAddress(), [])
+        ).wait(),
+        (await newExchange.setDepositIndex()).wait(),
+        (await newExchange.setDepositEnabled(true)).wait(),
+        (await newExchange.setDispatcher(dispatcherWallet.address)).wait(),
+      ]);
+
+      await newExchange.addMarket({
+        exists: true,
+        isActive: false,
+        baseAssetSymbol,
+        indexPriceAtDeactivation: 0,
+        lastIndexPrice: 0,
+        lastIndexPriceTimestampInMs: 0,
+        overridableFields: {
+          initialMarginFraction: '5000000',
+          maintenanceMarginFraction: '3000000',
+          incrementalInitialMarginFraction: '1000000',
+          baselinePositionSize: '14000000000',
+          incrementalPositionSize: '2800000000',
+          maximumPositionSize: '282000000000',
+          minimumPositionSize: '10000000',
+        },
+      });
+      await newExchange.addMarket({
+        exists: true,
+        isActive: false,
+        baseAssetSymbol: 'BTC',
+        indexPriceAtDeactivation: 0,
+        lastIndexPrice: 0,
+        lastIndexPriceTimestampInMs: 0,
+        overridableFields: {
+          initialMarginFraction: '5000000',
+          maintenanceMarginFraction: '3000000',
+          incrementalInitialMarginFraction: '1000000',
+          baselinePositionSize: '14000000000',
+          incrementalPositionSize: '2800000000',
+          maximumPositionSize: '282000000000',
+          minimumPositionSize: '10000000',
+        },
+      });
+
+      expect(
+        (
+          await newExchange.loadBalanceBySymbol(
+            trader2Wallet.address,
+            baseAssetSymbol,
+          )
+        ).toString(),
+      ).to.equal(decimalToPips('5.00000000'));
+      expect(
+        (
+          await newExchange.loadBalanceBySymbol(trader2Wallet.address, 'BTC')
+        ).toString(),
+      ).to.equal(decimalToPips('10.00000000'));
+
+      expect(
+        (
+          await newExchange.loadBalanceStructBySymbol(
+            trader1Wallet.address,
+            baseAssetSymbol,
+          )
+        ).balance.toString(),
+      ).to.equal(decimalToPips('-5.00000000'));
+      expect(
+        (
+          await newExchange.loadBalanceBySymbol(trader1Wallet.address, 'BTC')
+        ).toString(),
+      ).to.equal(decimalToPips('-10.00000000'));
+
+      buyOrder.nonce = uuidv1();
+      buyOrderSignature = await trader2Wallet.signTypedData(
+        ...getOrderSignatureTypedData(buyOrder, await newExchange.getAddress()),
+      );
+      sellOrder.nonce = uuidv1();
+      sellOrderSignature = await trader1Wallet.signTypedData(
+        ...getOrderSignatureTypedData(
+          sellOrder,
+          await newExchange.getAddress(),
+        ),
+      );
+
       await newExchange
         .connect(dispatcherWallet)
         .executeTrade(

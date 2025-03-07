@@ -53,7 +53,6 @@ library Funding {
   function loadOutstandingWalletFunding_delegatecall(
     address wallet,
     BalanceTracking.Storage storage balanceTracking,
-    mapping(address => string[]) storage baseAssetSymbolsWithOpenPositionsByWallet,
     mapping(string => FundingMultiplierQuartet[]) storage fundingMultipliersByBaseAssetSymbol,
     mapping(string => uint64) storage lastFundingRatePublishTimestampInMsByBaseAssetSymbol,
     mapping(string => Market) storage marketsByBaseAssetSymbol
@@ -62,7 +61,6 @@ library Funding {
       loadOutstandingWalletFunding(
         wallet,
         balanceTracking,
-        baseAssetSymbolsWithOpenPositionsByWallet,
         fundingMultipliersByBaseAssetSymbol,
         lastFundingRatePublishTimestampInMsByBaseAssetSymbol,
         marketsByBaseAssetSymbol
@@ -181,14 +179,18 @@ library Funding {
   function loadOutstandingWalletFunding(
     address wallet,
     BalanceTracking.Storage storage balanceTracking,
-    mapping(address => string[]) storage baseAssetSymbolsWithOpenPositionsByWallet,
     mapping(string => FundingMultiplierQuartet[]) storage fundingMultipliersByBaseAssetSymbol,
     mapping(string => uint64) storage lastFundingRatePublishTimestampInMsByBaseAssetSymbol,
     mapping(string => Market) storage marketsByBaseAssetSymbol
   ) internal view returns (int64 funding) {
     int64 marketFunding;
 
-    string[] memory baseAssetSymbols = baseAssetSymbolsWithOpenPositionsByWallet[wallet];
+    BalanceTracking.TrackingForWallet storage balanceTrackingForWallet = balanceTracking.trackingByWallet[wallet];
+
+    string[] memory baseAssetSymbols = (balanceTrackingForWallet.isMigrated ||
+      balanceTracking.migrationSource == address(0x0))
+      ? balanceTrackingForWallet.baseAssetSymbolsWithOpenPositions
+      : balanceTracking.migrationSource.loadBaseAssetSymbolsWithOpenPositionsByWallet(wallet);
     for (uint8 i = 0; i < baseAssetSymbols.length; i++) {
       Market memory market = marketsByBaseAssetSymbol[baseAssetSymbols[i]];
       Balance memory basePosition = balanceTracking.loadBalanceStructFromMigrationSourceIfNeeded(

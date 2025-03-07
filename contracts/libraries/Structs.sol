@@ -23,7 +23,6 @@ struct AcquisitionDeleverageArguments {
  * @notice Struct for tracking wallet balances and funding updates
  */
 struct Balance {
-  bool isMigrated;
   int64 balance;
   // The cost basis and last funding update timestamp are only relevant for base asset positions
   int64 costBasis;
