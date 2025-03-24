@@ -481,6 +481,15 @@ describe('bridge-adapters', function () {
           value: sendFee,
         });
 
+        await usdc.transfer(
+          await forwarder.getAddress(),
+          depositQuantityInAssetUnits,
+        );
+
+        await forwarder.setExchangeLayerZeroAdapter(
+          stargatePoolMock.getAddress(),
+        );
+
         const composeMessage = buildComposeMessage(
           depositQuantityInAssetUnits,
           traderWallet.address,
@@ -521,7 +530,7 @@ describe('bridge-adapters', function () {
           value: sendFee,
         });
 
-        await forwarder.setWithdrawFromXchainSender(
+        await forwarder.setExchangeLayerZeroAdapter(
           stargatePoolMock.getAddress(),
         );
 

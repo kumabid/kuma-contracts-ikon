@@ -49,8 +49,9 @@ contract KumaStargateForwarder is ILayerZeroComposer, Ownable2Step {
   IStargate public immutable stargate;
   // Local address of ERC-20 contract that will be forwarded via OFT adapter
   IERC20 public immutable token;
-  // Remote address of sender allowed to compose with ComposeMessageType.WithdrawFromXchain messages
-  address withdrawFromXchainSender;
+  // Remote address of contract allowed to be recipient of ComposeMessageType.DepositToXchain messages and to compose
+  // with ComposeMessageType.WithdrawFromXchain messages
+  address public exchangeLayerZeroAdapter;
 
   // To convert integer pips to a fractional price shift decimal left by the pip precision of 8
   // decimals places
@@ -138,16 +139,25 @@ contract KumaStargateForwarder is ILayerZeroComposer, Ownable2Step {
       });
       // https://github.com/LayerZero-Labs/LayerZero-v2/blob/1fde89479fdc68b1a54cda7f19efa84483fcacc4/oapp/contracts/oft/interfaces/IOFT.sol#L127C14-L127C23
       messagingFee = stargate.quoteSend(sendParam, false);
+      if (msg.value < messagingFee.nativeFee) {
+        // If the depositor did not include enough native asset, transfer the token amount forwarded from the remote
+        // source chain to the destination wallet address on the local chain
+        token.transfer(destinationWallet, amountLD);
+        emit ForwardFailed(destinationWallet, amountLD, _message, "Insufficient native fee");
+      }
     } else if (composeMessageType == ComposeMessageType.WithdrawFromXchain) {
-      // https://github.com/LayerZero-Labs/LayerZero-v2/blob/1fde89479fdc68b1a54cda7f19efa84483fcacc4/oapp/contracts/oft/libs/OFTComposeMsgCodec.sol#L61
-      address composeFrom = OFTComposeMsgCodec.bytes32ToAddress(OFTComposeMsgCodec.composeFrom(_message));
-      require(composeFrom == withdrawFromXchainSender, "Invalid withdraw from xchain sender");
-
       (, WithdrawFromXchain memory withdrawFromXchain) = abi.decode(
         composeMessage,
         (ComposeMessageType, WithdrawFromXchain)
       );
       destinationWallet = withdrawFromXchain.destinationWallet;
+
+      // https://github.com/LayerZero-Labs/LayerZero-v2/blob/1fde89479fdc68b1a54cda7f19efa84483fcacc4/oapp/contracts/oft/libs/OFTComposeMsgCodec.sol#L61
+      address composeFrom = OFTComposeMsgCodec.bytes32ToAddress(OFTComposeMsgCodec.composeFrom(_message));
+      if (composeFrom != exchangeLayerZeroAdapter) {
+        token.transfer(destinationWallet, amountLD);
+        emit ForwardFailed(destinationWallet, amountLD, _message, "Invalid compose from");
+      }
 
       // https://docs.layerzero.network/v2/developers/evm/oft/quickstart#estimating-gas-fees
       sendParam = SendParam({
@@ -162,24 +172,26 @@ contract KumaStargateForwarder is ILayerZeroComposer, Ownable2Step {
       // https://github.com/LayerZero-Labs/LayerZero-v2/blob/1fde89479fdc68b1a54cda7f19efa84483fcacc4/oapp/contracts/oft/interfaces/IOFT.sol#L127C14-L127C23
       messagingFee = stargate.quoteSend(sendParam, false);
     } else {
-      revert("Unknown compose message type");
+      // TODO Handle poorly formed compose message
+      token.transfer(owner(), amountLD);
+      emit ForwardFailed(destinationWallet, amountLD, _message, "Unknown compose message type");
     }
 
     try oft.send{ value: messagingFee.nativeFee }(sendParam, messagingFee, payable(address(this))) {} catch (
       bytes memory errorData
     ) {
-      // If the swap fails, transfer the token amount forwarded from the remote source chain to the destination
+      // If the send fails, transfer the token amount forwarded from the remote source chain to the destination
       // wallet address on the local chain
       token.transfer(destinationWallet, amountLD);
       emit ForwardFailed(destinationWallet, amountLD, _message, errorData);
     }
   }
 
-  function setWithdrawFromXchainSender(address newWithdrawFromXchainSender) public onlyOwner {
-    require(newWithdrawFromXchainSender != address(0x0), "Invalid wallet address");
-    require(newWithdrawFromXchainSender != withdrawFromXchainSender, "Must be different from current");
+  function setExchangeLayerZeroAdapter(address newExchangeLayerZeroAdapter) public onlyOwner {
+    require(newExchangeLayerZeroAdapter != address(0x0), "Invalid wallet address");
+    require(newExchangeLayerZeroAdapter != exchangeLayerZeroAdapter, "Must be different from current");
 
-    withdrawFromXchainSender = newWithdrawFromXchainSender;
+    exchangeLayerZeroAdapter = newExchangeLayerZeroAdapter;
   }
 
   /**
