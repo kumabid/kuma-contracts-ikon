@@ -1114,6 +1114,7 @@ __metadata:
     "@commitlint/config-conventional": "npm:^17.7.0"
     "@eslint/eslintrc": "npm:^3.0.2"
     "@eslint/js": "npm:^8.57.0"
+    "@layerzerolabs/lz-evm-messagelib-v2": "npm:^3.0.80"
     "@layerzerolabs/lz-evm-oapp-v2": "npm:^2.3.3"
     "@layerzerolabs/lz-evm-protocol-v2": "npm:^2.3.3"
     "@nomicfoundation/hardhat-chai-matchers": "npm:2.0.2"
@@ -1158,6 +1159,7 @@ __metadata:
     prettier: "npm:^2.8.0"
     prettier-plugin-solidity: "npm:^1.0.0"
     solhint: "npm:^3.3.7"
+    solidity-bytes-utils: "npm:0.8.3"
     solidity-coverage: "npm:^0.8.12"
     ts-node: "npm:^10.9.1"
     typechain: "npm:8.3.2"
@@ -1166,6 +1168,27 @@ __metadata:
     uuid: "npm:8.3.2"
   languageName: unknown
   linkType: soft
+
+"@layerzerolabs/lz-evm-messagelib-v2@npm:^3.0.80":
+  version: 3.0.80
+  resolution: "@layerzerolabs/lz-evm-messagelib-v2@npm:3.0.80"
+  peerDependencies:
+    "@arbitrum/nitro-contracts": ^1.1.0
+    "@axelar-network/axelar-gmp-sdk-solidity": ^5.6.4
+    "@chainlink/contracts-ccip": ^0.7.6
+    "@eth-optimism/contracts": ^0.6.0
+    "@layerzerolabs/lz-evm-protocol-v2": ^3.0.80
+    "@layerzerolabs/lz-evm-v1-0.7": ^3.0.80
+    "@openzeppelin/contracts": ^4.8.1 || ^5.0.0
+    "@openzeppelin/contracts-upgradeable": ^4.8.1 || ^5.0.0
+    hardhat-deploy: ^0.12.4
+    solidity-bytes-utils: ^0.8.0
+  peerDependenciesMeta:
+    "@arbitrum/nitro-contracts":
+      optional: true
+  checksum: 10c0/2a93cf599e3b022fffe5345ea6f48538d7ad15ae0f4010fb9fd45f47976b4af2670dd42f22bf368d93e93a90cd132458e7d24d1fa9c52960a555b3924798e338
+  languageName: node
+  linkType: hard
 
 "@layerzerolabs/lz-evm-oapp-v2@npm:^2.3.3":
   version: 2.3.3
@@ -8764,6 +8787,13 @@ __metadata:
   bin:
     solhint: solhint.js
   checksum: 10c0/add938da7fe4ad354098ee3fbe82900e72d59ba30a1e7f18bbc4a1e0cb954ba1bfc9d18226b6c4c3be5c25f7407f22c3c41e2b8b7f71a9210dabcb9d6a425d64
+  languageName: node
+  linkType: hard
+
+"solidity-bytes-utils@npm:0.8.3":
+  version: 0.8.3
+  resolution: "solidity-bytes-utils@npm:0.8.3"
+  checksum: 10c0/151a8e201faf5c0514959b2b67c89c821975b1c55484f4a76e9663e60f565e04295693cbb4e743e6f25184273144ef7d5646e60b6ce6d92af49c57565938c4af
   languageName: node
   linkType: hard
 

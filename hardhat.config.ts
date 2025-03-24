@@ -125,12 +125,17 @@ const config: HardhatUserConfig = {
       chainId: 64002,
       url: 'https://xchain-testnet-rpc.kuma.bid/',
     },
+    sepolia: {
+      chainId: 11155111,
+      url: 'https://eth-sepolia.g.alchemy.com/v2/Mb9MWMHYaVtzPEzAmo_UCdUHdtRyrSvj',
+    },
   },
   etherscan: {
     apiKey: {
       cArtio: 'abc',
       xchain: 'abc',
       xchainTestnet: 'abc',
+      sepolia: 'KAMGRM9Z7P1I58TTEBCHI6J9K583QCFZRR',
     },
     customChains: [
       {
@@ -164,6 +169,14 @@ const config: HardhatUserConfig = {
         urls: {
           apiURL: 'https://xchain-testnet-explorer.kuma.bid/api/v1',
           browserURL: 'https://xchain-testnet-explorer.kuma.bid/',
+        },
+      },
+      {
+        network: 'sepolia',
+        chainId: 11155111,
+        urls: {
+          apiURL: 'https://api-sepolia.etherscan.io/api',
+          browserURL: 'https://sepolia.etherscan.io/',
         },
       },
     ],

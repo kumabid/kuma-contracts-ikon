@@ -20,11 +20,12 @@ import {
 import type {
   Custodian,
   Exchange_v1,
-  ExchangeLayerZeroAdapter__factory,
-  USDC,
-  StargateV2PoolMock,
-  Governance,
   ExchangeLayerZeroAdapter,
+  ExchangeLayerZeroAdapter__factory,
+  Governance,
+  KumaStargateForwarder_v1,
+  StargateV2PoolMock,
+  USDC,
 } from '../typechain-types';
 import type { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 
@@ -145,26 +146,13 @@ describe('bridge-adapters', function () {
           depositQuantityInDecimal,
           quoteAssetDecimals,
         );
-        const composeMessage = ethers.solidityPacked(
-          ['uint64', 'uint32', 'uint256', 'bytes'],
-          [
-            0,
-            1,
-            depositQuantityInAssetUnits,
-            ethers.solidityPacked(
-              ['bytes', 'bytes'],
-              [
-                ethers.AbiCoder.defaultAbiCoder().encode(
-                  ['address'],
-                  [traderWallet.address],
-                ),
-                ethers.AbiCoder.defaultAbiCoder().encode(
-                  ['address'],
-                  [traderWallet.address],
-                ),
-              ],
-            ),
-          ],
+        const composeMessage = buildComposeMessage(
+          depositQuantityInAssetUnits,
+          traderWallet.address,
+          ethers.AbiCoder.defaultAbiCoder().encode(
+            ['address'],
+            [traderWallet.address],
+          ),
         );
 
         const bridgeAdapter = await ExchangeLayerZeroAdapterFactory.deploy(
@@ -212,26 +200,13 @@ describe('bridge-adapters', function () {
           depositQuantityInDecimal,
           quoteAssetDecimals,
         );
-        const composeMessage = ethers.solidityPacked(
-          ['uint64', 'uint32', 'uint256', 'bytes'],
-          [
-            0,
-            1,
-            depositQuantityInAssetUnits,
-            ethers.solidityPacked(
-              ['bytes', 'bytes'],
-              [
-                ethers.AbiCoder.defaultAbiCoder().encode(
-                  ['address'],
-                  [traderWallet.address],
-                ),
-                ethers.AbiCoder.defaultAbiCoder().encode(
-                  ['address'],
-                  [traderWallet.address],
-                ),
-              ],
-            ),
-          ],
+        const composeMessage = buildComposeMessage(
+          depositQuantityInAssetUnits,
+          traderWallet.address,
+          ethers.AbiCoder.defaultAbiCoder().encode(
+            ['address'],
+            [traderWallet.address],
+          ),
         );
 
         const bridgeAdapter = await ExchangeLayerZeroAdapterFactory.deploy(
@@ -291,26 +266,13 @@ describe('bridge-adapters', function () {
           depositQuantityInDecimal,
           quoteAssetDecimals,
         );
-        const composeMessage = ethers.solidityPacked(
-          ['uint64', 'uint32', 'uint256', 'bytes'],
-          [
-            0,
-            1,
-            depositQuantityInAssetUnits,
-            ethers.solidityPacked(
-              ['bytes', 'bytes'],
-              [
-                ethers.AbiCoder.defaultAbiCoder().encode(
-                  ['address'],
-                  [traderWallet.address],
-                ),
-                ethers.AbiCoder.defaultAbiCoder().encode(
-                  ['address'],
-                  [traderWallet.address],
-                ),
-              ],
-            ),
-          ],
+        const composeMessage = buildComposeMessage(
+          depositQuantityInAssetUnits,
+          traderWallet.address,
+          ethers.AbiCoder.defaultAbiCoder().encode(
+            ['address'],
+            [traderWallet.address],
+          ),
         );
 
         const bridgeAdapter = await ExchangeLayerZeroAdapterFactory.deploy(
@@ -475,4 +437,152 @@ describe('bridge-adapters', function () {
       });
     });
   });
+
+  describe('KumaStargateForwarder', function () {
+    let forwarder: KumaStargateForwarder_v1;
+    let ownerWallet: SignerWithAddress;
+    let stargatePoolMock: StargateV2PoolMock;
+    let traderWallet: SignerWithAddress;
+    let usdc: USDC;
+
+    const sendFee = ethers.parseEther('0.0001');
+
+    beforeEach(async () => {
+      usdc = await (await ethers.getContractFactory('USDC')).deploy();
+      stargatePoolMock = await (
+        await ethers.getContractFactory('StargateV2PoolMock')
+      ).deploy(sendFee, await usdc.getAddress());
+
+      forwarder = await (
+        await ethers.getContractFactory('KumaStargateForwarder_v1')
+      ).deploy(
+        decimalToPips('0.99900000'),
+        await stargatePoolMock.getAddress(),
+        await stargatePoolMock.getAddress(),
+        await stargatePoolMock.getAddress(),
+        await usdc.getAddress(),
+      );
+
+      const wallets = await ethers.getSigners();
+      ownerWallet = wallets[0];
+      traderWallet = wallets[1];
+    });
+
+    describe('lzCompose', function () {
+      it('should work for deposit when funded', async () => {
+        const depositQuantityInDecimal = '5.00000000';
+        const depositQuantityInAssetUnits = ethers.parseUnits(
+          depositQuantityInDecimal,
+          quoteAssetDecimals,
+        );
+
+        await ownerWallet.sendTransaction({
+          to: await forwarder.getAddress(),
+          value: sendFee,
+        });
+
+        await usdc.transfer(
+          await forwarder.getAddress(),
+          depositQuantityInAssetUnits,
+        );
+
+        await forwarder.setExchangeLayerZeroAdapter(
+          stargatePoolMock.getAddress(),
+        );
+
+        const composeMessage = buildComposeMessage(
+          depositQuantityInAssetUnits,
+          traderWallet.address,
+          // 'tuple(bytes32,tuple(int64,uint64,int32,uint256),tuple(int64,uint64,int32,uint256))
+          ethers.AbiCoder.defaultAbiCoder().encode(
+            ['uint8', 'tuple(uint32,uint32,address,address)'],
+            [
+              0, //  ComposeMessageType.DepositToXhain
+              [
+                1, // Source endpoint ID
+                2, // Destination endpoint ID
+                await stargatePoolMock.getAddress(), // Destination address
+                traderWallet.address, // Destination wallet
+              ],
+            ],
+          ),
+        );
+
+        await stargatePoolMock.lzCompose(
+          await forwarder.getAddress(),
+          await stargatePoolMock.getAddress(),
+          ethers.randomBytes(32),
+          composeMessage,
+          await stargatePoolMock.getAddress(),
+          '0x',
+        );
+      });
+
+      it('should work for withdrawal when funded', async () => {
+        const withdrawalQuantityInDecimal = '5.00000000';
+        const withdrawalQuantityInAssetUnits = ethers.parseUnits(
+          withdrawalQuantityInDecimal,
+          quoteAssetDecimals,
+        );
+
+        await ownerWallet.sendTransaction({
+          to: await forwarder.getAddress(),
+          value: sendFee,
+        });
+
+        await forwarder.setExchangeLayerZeroAdapter(
+          stargatePoolMock.getAddress(),
+        );
+
+        const composeMessage = buildComposeMessage(
+          withdrawalQuantityInAssetUnits,
+          await stargatePoolMock.getAddress(),
+          // 'tuple(bytes32,tuple(int64,uint64,int32,uint256),tuple(int64,uint64,int32,uint256))
+          ethers.AbiCoder.defaultAbiCoder().encode(
+            ['uint8', 'tuple(uint32,address)'],
+            [
+              1, //  ComposeMessageType.WithdrawFromXchain
+              [
+                1, // Destination endpoint ID
+                traderWallet.address, // Destination wallet
+              ],
+            ],
+          ),
+        );
+
+        await stargatePoolMock.lzCompose(
+          await forwarder.getAddress(),
+          await stargatePoolMock.getAddress(),
+          ethers.randomBytes(32),
+          composeMessage,
+          await stargatePoolMock.getAddress(),
+          '0x',
+        );
+      });
+    });
+  });
 });
+
+function buildComposeMessage(
+  amount: bigint,
+  fromAddress: string,
+  payload: string,
+) {
+  return ethers.solidityPacked(
+    ['uint64', 'uint32', 'uint256', 'bytes'],
+    [
+      0, // Nonce
+      1, // Source EID
+      amount, // Amount
+      ethers.solidityPacked(
+        ['bytes', 'bytes'],
+        [
+          // Compose from
+          ethers.AbiCoder.defaultAbiCoder().encode(['address'], [fromAddress]),
+          // Compose message
+          payload,
+        ],
+      ),
+    ],
+  );
+}
