@@ -23,7 +23,7 @@ import type {
   ExchangeLayerZeroAdapter,
   ExchangeLayerZeroAdapter__factory,
   Governance,
-  KumaStargateForwarder,
+  KumaStargateForwarder_v1,
   StargateV2PoolMock,
   USDC,
 } from '../typechain-types';
@@ -439,7 +439,7 @@ describe('bridge-adapters', function () {
   });
 
   describe('KumaStargateForwarder', function () {
-    let forwarder: KumaStargateForwarder;
+    let forwarder: KumaStargateForwarder_v1;
     let ownerWallet: SignerWithAddress;
     let stargatePoolMock: StargateV2PoolMock;
     let traderWallet: SignerWithAddress;
@@ -454,7 +454,7 @@ describe('bridge-adapters', function () {
       ).deploy(sendFee, await usdc.getAddress());
 
       forwarder = await (
-        await ethers.getContractFactory('KumaStargateForwarder')
+        await ethers.getContractFactory('KumaStargateForwarder_v1')
       ).deploy(
         decimalToPips('0.99900000'),
         await stargatePoolMock.getAddress(),

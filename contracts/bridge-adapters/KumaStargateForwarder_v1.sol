@@ -19,7 +19,7 @@ interface IStargate is IOFT {
 
 }
 
-contract KumaStargateForwarder is ILayerZeroComposer, Ownable2Step {
+contract KumaStargateForwarder_v1 is ILayerZeroComposer, Ownable2Step {
   using OptionsBuilder for bytes;
 
   enum ComposeMessageType {
@@ -48,7 +48,7 @@ contract KumaStargateForwarder is ILayerZeroComposer, Ownable2Step {
   // Stargate contract used to receive tokens from remote source chain when depositing to XCHAIN
   IStargate public immutable stargate;
   // Local address of ERC-20 contract that will be forwarded via OFT adapter
-  IERC20 public immutable token;
+  IERC20 public immutable usdc;
   // Remote address of contract allowed to be recipient of ComposeMessageType.DepositToXchain messages and to compose
   // with ComposeMessageType.WithdrawFromXchain messages
   address public exchangeLayerZeroAdapter;
@@ -67,7 +67,7 @@ contract KumaStargateForwarder is ILayerZeroComposer, Ownable2Step {
     address lzEndpoint_,
     address oft_,
     address stargate_,
-    address token_
+    address usdc_
   ) Ownable() {
     minimumForwardQuantityMultiplier = minimumForwardQuantityMultiplier_;
 
@@ -80,11 +80,11 @@ contract KumaStargateForwarder is ILayerZeroComposer, Ownable2Step {
     require(Address.isContract(stargate_), "Invalid Stargate address");
     stargate = IStargate(stargate_);
 
-    require(Address.isContract(token_), "Invalid token address");
-    require(IOFT(oft_).token() == token_, "Token address does not match OFT");
-    token = IERC20(token_);
+    require(Address.isContract(usdc_), "Invalid token address");
+    require(IOFT(oft_).token() == usdc_, "Token address does not match OFT");
+    usdc = IERC20(usdc_);
 
-    token.approve(address(oft_), type(uint256).max);
+    usdc.approve(address(oft_), type(uint256).max);
   }
 
   /**
@@ -142,7 +142,7 @@ contract KumaStargateForwarder is ILayerZeroComposer, Ownable2Step {
       if (msg.value < messagingFee.nativeFee) {
         // If the depositor did not include enough native asset, transfer the token amount forwarded from the remote
         // source chain to the destination wallet address on the local chain
-        token.transfer(destinationWallet, amountLD);
+        usdc.transfer(destinationWallet, amountLD);
         emit ForwardFailed(destinationWallet, amountLD, _message, "Insufficient native fee");
       }
     } else if (composeMessageType == ComposeMessageType.WithdrawFromXchain) {
@@ -155,7 +155,7 @@ contract KumaStargateForwarder is ILayerZeroComposer, Ownable2Step {
       // https://github.com/LayerZero-Labs/LayerZero-v2/blob/1fde89479fdc68b1a54cda7f19efa84483fcacc4/oapp/contracts/oft/libs/OFTComposeMsgCodec.sol#L61
       address composeFrom = OFTComposeMsgCodec.bytes32ToAddress(OFTComposeMsgCodec.composeFrom(_message));
       if (composeFrom != exchangeLayerZeroAdapter) {
-        token.transfer(destinationWallet, amountLD);
+        usdc.transfer(destinationWallet, amountLD);
         emit ForwardFailed(destinationWallet, amountLD, _message, "Invalid compose from");
       }
 
@@ -173,7 +173,7 @@ contract KumaStargateForwarder is ILayerZeroComposer, Ownable2Step {
       messagingFee = stargate.quoteSend(sendParam, false);
     } else {
       // TODO Handle poorly formed compose message
-      token.transfer(owner(), amountLD);
+      usdc.transfer(owner(), amountLD);
       emit ForwardFailed(destinationWallet, amountLD, _message, "Unknown compose message type");
     }
 
@@ -182,7 +182,7 @@ contract KumaStargateForwarder is ILayerZeroComposer, Ownable2Step {
     ) {
       // If the send fails, transfer the token amount forwarded from the remote source chain to the destination
       // wallet address on the local chain
-      token.transfer(destinationWallet, amountLD);
+      usdc.transfer(destinationWallet, amountLD);
       emit ForwardFailed(destinationWallet, amountLD, _message, errorData);
     }
   }
