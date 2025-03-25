@@ -457,6 +457,8 @@ describe('bridge-adapters', function () {
         await ethers.getContractFactory('KumaStargateForwarder_v1')
       ).deploy(
         decimalToPips('0.99900000'),
+        decimalToPips('0.80000000'),
+        stargatePoolMock.getAddress(),
         await stargatePoolMock.getAddress(),
         await stargatePoolMock.getAddress(),
         await stargatePoolMock.getAddress(),
@@ -484,10 +486,6 @@ describe('bridge-adapters', function () {
         await usdc.transfer(
           await forwarder.getAddress(),
           depositQuantityInAssetUnits,
-        );
-
-        await forwarder.setExchangeLayerZeroAdapter(
-          stargatePoolMock.getAddress(),
         );
 
         const composeMessage = buildComposeMessage(
@@ -529,10 +527,6 @@ describe('bridge-adapters', function () {
           to: await forwarder.getAddress(),
           value: sendFee,
         });
-
-        await forwarder.setExchangeLayerZeroAdapter(
-          stargatePoolMock.getAddress(),
-        );
 
         const composeMessage = buildComposeMessage(
           withdrawalQuantityInAssetUnits,

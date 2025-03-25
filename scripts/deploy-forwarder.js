@@ -15,6 +15,8 @@ async function main() {
   ).connect(deployWallet);
   const forwarder = await KumaStargateForwarderFactory.deploy(
     process.env.MINIMUM_FORWARD_QUANTITY_MULTIPLIER,
+    process.env.MINIMUM_DEPOSIT_NATIVE_DROP_QUANTITY_MULTIPLIER,
+    process.env.EXCHANGE_LAYERZERO_ADAPTER,
     process.env.LZ_ENDPOINT,
     process.env.OFT,
     process.env.STARGATE,
