@@ -75,7 +75,8 @@ contract KumaStargateForwarder_v1 is ILayerZeroComposer, Ownable2Step {
     minimumForwardQuantityMultiplier = minimumForwardQuantityMultiplier_;
     minimumDepositNativeDropQuantityMultiplier = minimumDepositNativeDropQuantityMultiplier_;
 
-    require(Address.isContract(exchangeLayerZeroAdapter_), "Invalid Bridge Adapter address");
+    // We cannot use Address.isContract here since exchangeLayerZeroAdapter is on a remote chain
+    require(exchangeLayerZeroAdapter_ != address(0x0), "Invalid Bridge Adapter address");
     exchangeLayerZeroAdapter = exchangeLayerZeroAdapter_;
 
     require(Address.isContract(lzEndpoint_), "Invalid LZ Endpoint address");
