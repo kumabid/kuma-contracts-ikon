@@ -10,6 +10,7 @@ import { OptionsBuilder } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/lib
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { Ownable2Step } from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import { IOFT, MessagingFee, SendParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
+import { ExchangeLayerZeroAdapter } from "./ExchangeLayerZeroAdapter.sol";
 
 // https://github.com/LayerZero-Labs/LayerZero-v2/blob/1fde89479fdc68b1a54cda7f19efa84483fcacc4/oapp/contracts/oft/interfaces/IOFT.sol
 // https://github.com/stargate-protocol/stargate-v2/blob/main/packages/stg-evm-v2/src/interfaces/IStargate.sol#L22
@@ -28,9 +29,7 @@ contract KumaStargateForwarder_v1 is ILayerZeroComposer, Ownable2Step {
   }
 
   struct DepositToXchain {
-    uint32 sourceEndpointId;
     uint32 destinationEndpointId;
-    address destinationBridgeAdapterAddress;
     address destinationWallet;
   }
 
@@ -43,15 +42,17 @@ contract KumaStargateForwarder_v1 is ILayerZeroComposer, Ownable2Step {
   address public immutable lzEndpoint;
   // Multiplier in pips used to calculate minimum forwarded quantity after slippage
   uint64 public minimumForwardQuantityMultiplier;
+  // Multiplier in pips used to calculate minimum native drop quantity included in compose compared to actual fee
+  uint64 public minimumDepositNativeDropQuantityMultiplier;
   // The local OFT adapter contract used to send tokens to the remote destination chain
   IOFT public immutable oft;
   // Stargate contract used to receive tokens from remote source chain when depositing to XCHAIN
   IStargate public immutable stargate;
   // Local address of ERC-20 contract that will be forwarded via OFT adapter
   IERC20 public immutable usdc;
-  // Remote address of contract allowed to be recipient of ComposeMessageType.DepositToXchain messages and to compose
-  // with ComposeMessageType.WithdrawFromXchain messages
-  address public exchangeLayerZeroAdapter;
+  // Remote address of contract that will be ultimate recipient of ComposeMessageType.DepositToXchain messages and
+  // allowed to compose with ComposeMessageType.WithdrawFromXchain messages
+  address public immutable exchangeLayerZeroAdapter;
 
   // To convert integer pips to a fractional price shift decimal left by the pip precision of 8
   // decimals places
@@ -64,12 +65,18 @@ contract KumaStargateForwarder_v1 is ILayerZeroComposer, Ownable2Step {
    */
   constructor(
     uint64 minimumForwardQuantityMultiplier_,
+    uint64 minimumDepositNativeDropQuantityMultiplier_,
+    address exchangeLayerZeroAdapter_,
     address lzEndpoint_,
     address oft_,
     address stargate_,
     address usdc_
   ) Ownable() {
     minimumForwardQuantityMultiplier = minimumForwardQuantityMultiplier_;
+    minimumDepositNativeDropQuantityMultiplier = minimumDepositNativeDropQuantityMultiplier_;
+
+    require(Address.isContract(exchangeLayerZeroAdapter_), "Invalid Bridge Adapter address");
+    exchangeLayerZeroAdapter = exchangeLayerZeroAdapter_;
 
     require(Address.isContract(lzEndpoint_), "Invalid LZ Endpoint address");
     lzEndpoint = lzEndpoint_;
@@ -108,73 +115,70 @@ contract KumaStargateForwarder_v1 is ILayerZeroComposer, Ownable2Step {
     bytes calldata /* _extraData */
   ) public payable override {
     require(msg.sender == lzEndpoint, "Caller must be LZ Endpoint");
-    require(_from == address(stargate), "OApp must be Stargate");
 
-    // https://github.com/LayerZero-Labs/LayerZero-v2/blob/1fde89479fdc68b1a54cda7f19efa84483fcacc4/oapp/contracts/oft/libs/OFTComposeMsgCodec.sol#L52
+    // Parse out composed message
     uint256 amountLD = OFTComposeMsgCodec.amountLD(_message);
-
-    // https://github.com/LayerZero-Labs/LayerZero-v2/blob/1fde89479fdc68b1a54cda7f19efa84483fcacc4/oapp/contracts/oft/libs/OFTComposeMsgCodec.sol#L70
     bytes memory composeMessage = OFTComposeMsgCodec.composeMsg(_message);
-
     // The first field in the compose message indicates the type of payload that follows it
     ComposeMessageType composeMessageType = abi.decode(composeMessage, (ComposeMessageType));
 
-    SendParam memory sendParam;
-    MessagingFee memory messagingFee;
-    address destinationWallet;
-
     if (composeMessageType == ComposeMessageType.DepositToXchain) {
-      (, DepositToXchain memory depositToXchain) = abi.decode(composeMessage, (ComposeMessageType, DepositToXchain));
-      destinationWallet = depositToXchain.destinationWallet;
-
-      // https://docs.layerzero.network/v2/developers/evm/oft/quickstart#estimating-gas-fees
-      sendParam = SendParam({
-        dstEid: depositToXchain.destinationEndpointId,
-        to: OFTComposeMsgCodec.addressToBytes32(depositToXchain.destinationBridgeAdapterAddress),
-        amountLD: amountLD,
-        minAmountLD: (amountLD * minimumForwardQuantityMultiplier) / PIP_PRICE_MULTIPLIER,
-        extraOptions: bytes(""),
-        composeMsg: abi.encode(ComposeMessageType.DepositToXchain, depositToXchain),
-        oftCmd: bytes("") // Not used
-      });
-      // https://github.com/LayerZero-Labs/LayerZero-v2/blob/1fde89479fdc68b1a54cda7f19efa84483fcacc4/oapp/contracts/oft/interfaces/IOFT.sol#L127C14-L127C23
-      messagingFee = stargate.quoteSend(sendParam, false);
-      if (msg.value < messagingFee.nativeFee) {
-        // If the depositor did not include enough native asset, transfer the token amount forwarded from the remote
-        // source chain to the destination wallet address on the local chain
-        usdc.transfer(destinationWallet, amountLD);
-        emit ForwardFailed(destinationWallet, amountLD, _message, "Insufficient native fee");
-      }
+      // Depositing to XCHAIN ExchangeLayerZeroAdapter
+      require(_from == address(stargate), "OApp must be Stargate");
+      uint32 sourceEndpointId = OFTComposeMsgCodec.srcEid(_message);
+      _forwardDeposit(amountLD, sourceEndpointId, composeMessage);
     } else if (composeMessageType == ComposeMessageType.WithdrawFromXchain) {
-      (, WithdrawFromXchain memory withdrawFromXchain) = abi.decode(
-        composeMessage,
-        (ComposeMessageType, WithdrawFromXchain)
-      );
-      destinationWallet = withdrawFromXchain.destinationWallet;
-
-      // https://github.com/LayerZero-Labs/LayerZero-v2/blob/1fde89479fdc68b1a54cda7f19efa84483fcacc4/oapp/contracts/oft/libs/OFTComposeMsgCodec.sol#L61
+      // Withdrawing from XCHAIN to EOA
+      require(_from == address(oft), "OApp must be Kuma OFTAdapter");
       address composeFrom = OFTComposeMsgCodec.bytes32ToAddress(OFTComposeMsgCodec.composeFrom(_message));
-      if (composeFrom != exchangeLayerZeroAdapter) {
-        usdc.transfer(destinationWallet, amountLD);
-        emit ForwardFailed(destinationWallet, amountLD, _message, "Invalid compose from");
-      }
-
-      // https://docs.layerzero.network/v2/developers/evm/oft/quickstart#estimating-gas-fees
-      sendParam = SendParam({
-        dstEid: withdrawFromXchain.destinationEndpointId,
-        to: OFTComposeMsgCodec.addressToBytes32(destinationWallet),
-        amountLD: amountLD,
-        minAmountLD: (amountLD * minimumForwardQuantityMultiplier) / PIP_PRICE_MULTIPLIER,
-        extraOptions: bytes(""),
-        composeMsg: bytes(""), // Compose not supported on withdrawal
-        oftCmd: bytes("") // Not used
-      });
-      // https://github.com/LayerZero-Labs/LayerZero-v2/blob/1fde89479fdc68b1a54cda7f19efa84483fcacc4/oapp/contracts/oft/interfaces/IOFT.sol#L127C14-L127C23
-      messagingFee = stargate.quoteSend(sendParam, false);
+      _forwardWithdrawal(amountLD, composeFrom, composeMessage);
     } else {
-      // TODO Handle poorly formed compose message
+      // Handle poorly formed compose message
       usdc.transfer(owner(), amountLD);
-      emit ForwardFailed(destinationWallet, amountLD, _message, "Unknown compose message type");
+      emit ForwardFailed(address(0x0), amountLD, _message, "Malformed compose message");
+    }
+  }
+
+  function setMinimumDepositNativeDropQuantityMultiplier(
+    uint64 newMinimumDepositNativeDropQuantityMultiplier
+  ) public onlyOwner {
+    minimumDepositNativeDropQuantityMultiplier = newMinimumDepositNativeDropQuantityMultiplier;
+  }
+
+  function setMinimumWithdrawQuantityMultiplier(uint64 newMinimumForwardQuantityMultiplier) public onlyOwner {
+    minimumForwardQuantityMultiplier = newMinimumForwardQuantityMultiplier;
+  }
+
+  /**
+   * @notice Allow Admin wallet to withdraw send fee funding
+   */
+  function withdrawNativeAsset(address payable destinationWallet, uint256 quantity) public onlyOwner {
+    destinationWallet.transfer(quantity);
+  }
+
+  function _forwardDeposit(uint256 amountLD, uint32 sourceEndpointId, bytes memory composeMessage) private {
+    (, DepositToXchain memory depositToXchain) = abi.decode(composeMessage, (ComposeMessageType, DepositToXchain));
+    address destinationWallet = depositToXchain.destinationWallet;
+
+    // https://docs.layerzero.network/v2/developers/evm/oft/quickstart#estimating-gas-fees
+    SendParam memory sendParam = SendParam({
+      dstEid: depositToXchain.destinationEndpointId,
+      to: OFTComposeMsgCodec.addressToBytes32(exchangeLayerZeroAdapter),
+      amountLD: amountLD,
+      minAmountLD: (amountLD * minimumForwardQuantityMultiplier) / PIP_PRICE_MULTIPLIER,
+      extraOptions: bytes(""),
+      composeMsg: abi.encode(sourceEndpointId, destinationWallet),
+      oftCmd: bytes("") // Not used
+    });
+    // https://github.com/LayerZero-Labs/LayerZero-v2/blob/1fde89479fdc68b1a54cda7f19efa84483fcacc4/oapp/contracts/oft/interfaces/IOFT.sol#L127C14-L127C23
+    MessagingFee memory messagingFee = oft.quoteSend(sendParam, false);
+    uint256 minimumNativeDrop = (messagingFee.nativeFee * minimumDepositNativeDropQuantityMultiplier) /
+      PIP_PRICE_MULTIPLIER;
+    if (msg.value < minimumNativeDrop) {
+      // If the depositor did not include enough native asset, transfer the token amount forwarded from the remote
+      // source chain to the destination wallet address on the local chain
+      usdc.transfer(destinationWallet, amountLD);
+      emit ForwardFailed(destinationWallet, amountLD, composeMessage, "Insufficient native drop");
     }
 
     try oft.send{ value: messagingFee.nativeFee }(sendParam, messagingFee, payable(address(this))) {} catch (
@@ -183,21 +187,42 @@ contract KumaStargateForwarder_v1 is ILayerZeroComposer, Ownable2Step {
       // If the send fails, transfer the token amount forwarded from the remote source chain to the destination
       // wallet address on the local chain
       usdc.transfer(destinationWallet, amountLD);
-      emit ForwardFailed(destinationWallet, amountLD, _message, errorData);
+      emit ForwardFailed(destinationWallet, amountLD, composeMessage, errorData);
     }
   }
 
-  function setExchangeLayerZeroAdapter(address newExchangeLayerZeroAdapter) public onlyOwner {
-    require(newExchangeLayerZeroAdapter != address(0x0), "Invalid wallet address");
-    require(newExchangeLayerZeroAdapter != exchangeLayerZeroAdapter, "Must be different from current");
+  function _forwardWithdrawal(uint256 amountLD, address composeFrom, bytes memory composeMessage) private {
+    (, WithdrawFromXchain memory withdrawFromXchain) = abi.decode(
+      composeMessage,
+      (ComposeMessageType, WithdrawFromXchain)
+    );
+    address destinationWallet = withdrawFromXchain.destinationWallet;
 
-    exchangeLayerZeroAdapter = newExchangeLayerZeroAdapter;
-  }
+    if (composeFrom != exchangeLayerZeroAdapter) {
+      usdc.transfer(destinationWallet, amountLD);
+      emit ForwardFailed(destinationWallet, amountLD, composeMessage, "Invalid compose from");
+    }
 
-  /**
-   * @notice Allow Admin wallet to withdraw send fee funding
-   */
-  function withdrawNativeAsset(address payable destinationWallet, uint256 quantity) public onlyOwner {
-    destinationWallet.transfer(quantity);
+    // https://docs.layerzero.network/v2/developers/evm/oft/quickstart#estimating-gas-fees
+    SendParam memory sendParam = SendParam({
+      dstEid: withdrawFromXchain.destinationEndpointId,
+      to: OFTComposeMsgCodec.addressToBytes32(destinationWallet),
+      amountLD: amountLD,
+      minAmountLD: (amountLD * minimumForwardQuantityMultiplier) / PIP_PRICE_MULTIPLIER,
+      extraOptions: bytes(""),
+      composeMsg: bytes(""), // Compose not supported on withdrawal
+      oftCmd: bytes("") // Not used
+    });
+    // https://github.com/LayerZero-Labs/LayerZero-v2/blob/1fde89479fdc68b1a54cda7f19efa84483fcacc4/oapp/contracts/oft/interfaces/IOFT.sol#L127C14-L127C23
+    MessagingFee memory messagingFee = stargate.quoteSend(sendParam, false);
+
+    try stargate.send{ value: messagingFee.nativeFee }(sendParam, messagingFee, payable(address(this))) {} catch (
+      bytes memory errorData
+    ) {
+      // If the send fails, transfer the token amount forwarded from the remote source chain to the destination
+      // wallet address on the local chain
+      usdc.transfer(destinationWallet, amountLD);
+      emit ForwardFailed(destinationWallet, amountLD, composeMessage, errorData);
+    }
   }
 }
