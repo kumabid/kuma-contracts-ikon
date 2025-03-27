@@ -8,6 +8,8 @@ import { ILayerZeroComposer } from "@layerzerolabs/lz-evm-protocol-v2/contracts/
 import { OFTComposeMsgCodec } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/libs/OFTComposeMsgCodec.sol";
 import { IOFT, MessagingFee, OFTReceipt, SendParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
 
+import { GasFeeEstimation } from "./GasFeeEstimation.sol";
+
 interface ICustodian {
   function exchange() external view returns (address);
 }
@@ -261,9 +263,8 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
    * @dev quantity is in pips since this function is used in conjunction with the off-chain SDK and REST API
    */
   function estimateWithdrawQuantityInAssetUnits(
-    address destinationWallet,
-    uint64 quantity,
-    bytes memory payload
+    uint32 destinationEndpointId,
+    uint64 quantity
   )
     public
     view
@@ -273,39 +274,30 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
       uint8 poolDecimals
     )
   {
-    uint256 quantityInAssetUnits = _pipsToAssetUnits(quantity, oft.sharedDecimals());
-
-    SendParam memory sendParam = _getSendParamForWithdraw(destinationWallet, quantityInAssetUnits, payload);
-
-    (, , OFTReceipt memory receipt) = oft.quoteOFT(sendParam);
-
-    estimatedWithdrawQuantityInAssetUnits = receipt.amountReceivedLD;
-    minimumWithdrawQuantityInAssetUnits =
-      (quantityInAssetUnits * minimumWithdrawQuantityMultiplier) /
-      PIP_PRICE_MULTIPLIER;
-    poolDecimals = oft.sharedDecimals();
+    return
+      GasFeeEstimation.loadEstimatedForwardedQuantityInAssetUnits(
+        destinationEndpointId,
+        minimumWithdrawQuantityMultiplier,
+        oft,
+        quantity
+      );
   }
 
   /**
    * @notice Load current gas fee for each target endpoint ID specified in argument array
    *
-   * @param layerZeroEndpointIds An array of LZ Endpoint IDs
+   * @param destinationEndpointIds An array of destination LayerZero Endpoint IDs
    */
   function loadGasFeesInAssetUnits(
-    uint32[] calldata layerZeroEndpointIds
+    uint32[] calldata destinationEndpointIds
   ) public view returns (uint256[] memory gasFeesInAssetUnits) {
-    gasFeesInAssetUnits = new uint256[](layerZeroEndpointIds.length);
-
-    for (uint256 i = 0; i < layerZeroEndpointIds.length; ++i) {
-      SendParam memory sendParam = _getSendParamForWithdraw(
-        address(this),
-        100000000,
-        abi.encode(layerZeroEndpointIds[i])
+    return
+      GasFeeEstimation.loadGasFeesInAssetUnits(
+        bytes(""),
+        destinationEndpointIds,
+        minimumWithdrawQuantityMultiplier,
+        oft
       );
-
-      MessagingFee memory messagingFee = oft.quoteSend(sendParam, false);
-      gasFeesInAssetUnits[i] = messagingFee.nativeFee;
-    }
   }
 
   function _getSendParamForWithdraw(
@@ -326,18 +318,5 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
         composeMsg: bytes(""),
         oftCmd: bytes("") // Taxi mode
       });
-  }
-
-  /*
-   * @dev Copied here from AssetUnitConversions.sol due to Solidity version mismatch
-   */
-  function _pipsToAssetUnits(uint64 quantity, uint8 assetDecimals) private pure returns (uint256) {
-    require(assetDecimals <= 32, "Asset cannot have more than 32 decimals");
-
-    // Exponents cannot be negative, so divide or multiply based on exponent signedness
-    if (assetDecimals > 8) {
-      return uint256(quantity) * (uint256(10) ** (assetDecimals - 8));
-    }
-    return uint256(quantity) / (uint256(10) ** (8 - assetDecimals));
   }
 }
