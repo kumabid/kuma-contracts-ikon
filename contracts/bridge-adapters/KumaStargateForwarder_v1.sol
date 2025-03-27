@@ -21,15 +21,12 @@ interface IStargate is IOFT {
 }
 
 contract KumaStargateForwarder_v1 is ILayerZeroComposer, Ownable2Step {
-  using OptionsBuilder for bytes;
-
   enum ComposeMessageType {
     DepositToXchain,
     WithdrawFromXchain
   }
 
   struct DepositToXchain {
-    uint32 destinationEndpointId;
     address destinationWallet;
   }
 
@@ -38,6 +35,15 @@ contract KumaStargateForwarder_v1 is ILayerZeroComposer, Ownable2Step {
     address destinationWallet;
   }
 
+  // 99.999999%
+  uint64 public constant MAX_MULTIPLIER = 99999999;
+
+  // 0.000001%
+  uint64 public constant MIN_MULTIPLIER = 1;
+
+  // Remote address of contract on XCHAIN that will be ultimate recipient of ComposeMessageType.DepositToXchain
+  // messages and allowed to compose with ComposeMessageType.WithdrawFromXchain messages
+  address public immutable exchangeLayerZeroAdapter;
   // Address of LayerZero endpoint contract that will call `lzCompose` when triggered by off-chain executor
   address public immutable lzEndpoint;
   // Multiplier in pips used to calculate minimum forwarded quantity after slippage
@@ -50,9 +56,8 @@ contract KumaStargateForwarder_v1 is ILayerZeroComposer, Ownable2Step {
   IStargate public immutable stargate;
   // Local address of ERC-20 contract that will be forwarded via OFT adapter
   IERC20 public immutable usdc;
-  // Remote address of contract that will be ultimate recipient of ComposeMessageType.DepositToXchain messages and
-  // allowed to compose with ComposeMessageType.WithdrawFromXchain messages
-  address public immutable exchangeLayerZeroAdapter;
+  // LayerZero endpoint ID for XCHAIN, used to correctly route deposits
+  uint32 public immutable xchainEndpointId;
 
   // To convert integer pips to a fractional price shift decimal left by the pip precision of 8
   // decimals places
@@ -61,26 +66,27 @@ contract KumaStargateForwarder_v1 is ILayerZeroComposer, Ownable2Step {
   event ForwardFailed(address destinationWallet, uint256 quantity, bytes payload, bytes errorData);
 
   /**
-   * @notice Instantiate a new `StargateV2OFTForwarder` contract
+   * @notice Instantiate a new `KumaStargateForwarder_v1` contract
    */
   constructor(
-    uint64 minimumForwardQuantityMultiplier_,
-    uint64 minimumDepositNativeDropQuantityMultiplier_,
     address exchangeLayerZeroAdapter_,
     address lzEndpoint_,
+    uint64 minimumForwardQuantityMultiplier_,
+    uint64 minimumDepositNativeDropQuantityMultiplier_,
     address oft_,
     address stargate_,
-    address usdc_
+    address usdc_,
+    uint32 xchainEndpointId_
   ) Ownable() {
-    minimumForwardQuantityMultiplier = minimumForwardQuantityMultiplier_;
-    minimumDepositNativeDropQuantityMultiplier = minimumDepositNativeDropQuantityMultiplier_;
-
     // We cannot use Address.isContract here since exchangeLayerZeroAdapter is on a remote chain
     require(exchangeLayerZeroAdapter_ != address(0x0), "Invalid Bridge Adapter address");
     exchangeLayerZeroAdapter = exchangeLayerZeroAdapter_;
 
     require(Address.isContract(lzEndpoint_), "Invalid LZ Endpoint address");
     lzEndpoint = lzEndpoint_;
+
+    minimumForwardQuantityMultiplier = minimumForwardQuantityMultiplier_;
+    minimumDepositNativeDropQuantityMultiplier = minimumDepositNativeDropQuantityMultiplier_;
 
     require(Address.isContract(oft_), "Invalid OFT address");
     oft = IOFT(oft_);
@@ -90,9 +96,13 @@ contract KumaStargateForwarder_v1 is ILayerZeroComposer, Ownable2Step {
 
     require(Address.isContract(usdc_), "Invalid token address");
     require(IOFT(oft_).token() == usdc_, "Token address does not match OFT");
+    require(IOFT(stargate_).token() == usdc_, "Token address does not match Stargate");
     usdc = IERC20(usdc_);
-
+    // Pre-approve OFT and Stargate contracts to allow unlimited USDC transfers via either path
     usdc.approve(address(oft_), type(uint256).max);
+    usdc.approve(address(stargate_), type(uint256).max);
+
+    xchainEndpointId = xchainEndpointId_;
   }
 
   /**
@@ -140,18 +150,41 @@ contract KumaStargateForwarder_v1 is ILayerZeroComposer, Ownable2Step {
     }
   }
 
+  /**
+   * @notice Sets the tolerance for an insufficient native drop to cover gas fees when forwarding deposits to XCHAIN
+   *
+   * @param newMinimumDepositNativeDropQuantityMultiplier The tolerance for an insufficient native drop as a multiplier
+   * in pips of the required quantity
+   */
   function setMinimumDepositNativeDropQuantityMultiplier(
     uint64 newMinimumDepositNativeDropQuantityMultiplier
   ) public onlyOwner {
+    require(
+      minimumDepositNativeDropQuantityMultiplier >= MIN_MULTIPLIER &&
+        minimumDepositNativeDropQuantityMultiplier <= MAX_MULTIPLIER,
+      "Value out of bounds"
+    );
+
     minimumDepositNativeDropQuantityMultiplier = newMinimumDepositNativeDropQuantityMultiplier;
   }
 
+  /**
+   * @notice Sets the tolerance for the minimum token quantity delivered on the remote chain after slippage
+   *
+   * @param newMinimumForwardQuantityMultiplier the tolerance for the minimum token quantity delivered on the remote
+   * chain after slippage as a multiplier in pips of the local quantity sent
+   */
   function setMinimumWithdrawQuantityMultiplier(uint64 newMinimumForwardQuantityMultiplier) public onlyOwner {
+    require(
+      newMinimumForwardQuantityMultiplier >= MIN_MULTIPLIER && newMinimumForwardQuantityMultiplier <= MAX_MULTIPLIER,
+      "Value out of bounds"
+    );
+
     minimumForwardQuantityMultiplier = newMinimumForwardQuantityMultiplier;
   }
 
   /**
-   * @notice Allow Admin wallet to withdraw send fee funding
+   * @notice Allow Owner wallet to withdraw send fee funding
    */
   function withdrawNativeAsset(address payable destinationWallet, uint256 quantity) public onlyOwner {
     destinationWallet.transfer(quantity);
@@ -163,7 +196,7 @@ contract KumaStargateForwarder_v1 is ILayerZeroComposer, Ownable2Step {
 
     // https://docs.layerzero.network/v2/developers/evm/oft/quickstart#estimating-gas-fees
     SendParam memory sendParam = SendParam({
-      dstEid: depositToXchain.destinationEndpointId,
+      dstEid: xchainEndpointId,
       to: OFTComposeMsgCodec.addressToBytes32(exchangeLayerZeroAdapter),
       amountLD: amountLD,
       minAmountLD: (amountLD * minimumForwardQuantityMultiplier) / PIP_PRICE_MULTIPLIER,
@@ -200,6 +233,8 @@ contract KumaStargateForwarder_v1 is ILayerZeroComposer, Ownable2Step {
     address destinationWallet = withdrawFromXchain.destinationWallet;
 
     if (composeFrom != exchangeLayerZeroAdapter) {
+      // Only the remote Bridge Adapter on XCHAIN is allowed to compose withdrawals since this contract will pay all the
+      // native fees needed to bridge them to the destination chain
       usdc.transfer(destinationWallet, amountLD);
       emit ForwardFailed(destinationWallet, amountLD, composeMessage, "Invalid compose from");
     }

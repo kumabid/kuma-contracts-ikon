@@ -231,14 +231,26 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
     }
   }
 
+  /**
+   * @notice Disable deposits
+   */
   function setDepositEnabled(bool isEnabled) public onlyAdmin {
     isDepositEnabled = isEnabled;
   }
 
+  /**
+   * @notice Sets the tolerance for the minimum token quantity delivered on the remote chain after slippage
+   *
+   * @param newMinimumWithdrawQuantityMultiplier the tolerance for the minimum token quantity delivered on the
+   * remote chain after slippage as a multiplier in pips of the local quantity sent
+   */
   function setMinimumWithdrawQuantityMultiplier(uint64 newMinimumWithdrawQuantityMultiplier) public onlyAdmin {
     minimumWithdrawQuantityMultiplier = newMinimumWithdrawQuantityMultiplier;
   }
 
+  /**
+   * @notice Disable withdrawals
+   */
   function setWithdrawEnabled(bool isEnabled) public onlyAdmin {
     isWithdrawEnabled = isEnabled;
   }

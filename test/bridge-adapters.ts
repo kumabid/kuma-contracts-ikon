@@ -456,13 +456,14 @@ describe('bridge-adapters', function () {
       forwarder = await (
         await ethers.getContractFactory('KumaStargateForwarder_v1')
       ).deploy(
-        decimalToPips('0.99900000'),
-        decimalToPips('0.80000000'),
         stargatePoolMock.getAddress(),
         await stargatePoolMock.getAddress(),
+        decimalToPips('0.99900000'),
+        decimalToPips('0.80000000'),
         await stargatePoolMock.getAddress(),
         await stargatePoolMock.getAddress(),
         await usdc.getAddress(),
+        3,
       );
 
       const wallets = await ethers.getSigners();
