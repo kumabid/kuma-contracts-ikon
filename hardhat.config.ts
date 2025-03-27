@@ -40,65 +40,42 @@ const SOLC_VERSION_LAYERZERO = '0.8.25';
 
 // Solidity coverage tool does not support the viaIR compiler option
 // https://github.com/sc-forks/solidity-coverage/issues/715
-const solidity = process.env.COVERAGE
-  ? {
-      compilers: [
-        {
-          version: SOLC_VERSION,
-          settings: {
-            optimizer: {
-              enabled: true,
-              runs: 1,
-            },
-          },
+const solidity = {
+  compilers: [
+    {
+      version: SOLC_VERSION,
+      settings: {
+        optimizer: {
+          enabled: true,
+          runs: 1000000,
         },
-        {
-          version: SOLC_VERSION_LAYERZERO,
-          settings: {
-            optimizer: {
-              enabled: true,
-              runs: 1,
-            },
-          },
-        },
-      ],
-    }
-  : {
-      compilers: [
-        {
-          version: SOLC_VERSION,
-          settings: {
-            optimizer: {
-              enabled: true,
-              runs: 1000000,
-            },
-            viaIR: true,
-          },
-        },
-        {
-          version: SOLC_VERSION_LAYERZERO,
-          settings: {
-            optimizer: {
-              enabled: true,
-              runs: 1000000,
-            },
-            viaIR: true,
-          },
-        },
-      ],
-      overrides: {
-        'contracts/Exchange.sol': {
-          version: SOLC_VERSION,
-          settings: {
-            optimizer: {
-              enabled: true,
-              runs: 100,
-            },
-            viaIR: true,
-          },
-        },
+        viaIR: true,
       },
-    };
+    },
+    {
+      version: SOLC_VERSION_LAYERZERO,
+      settings: {
+        optimizer: {
+          enabled: true,
+          runs: 1000000,
+        },
+        viaIR: true,
+      },
+    },
+  ],
+  overrides: {
+    'contracts/Exchange.sol': {
+      version: SOLC_VERSION,
+      settings: {
+        optimizer: {
+          enabled: true,
+          runs: 100,
+        },
+        viaIR: true,
+      },
+    },
+  },
+};
 
 const config: HardhatUserConfig = {
   solidity,
