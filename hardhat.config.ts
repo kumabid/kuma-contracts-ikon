@@ -8,27 +8,6 @@ import 'hardhat-contract-sizer';
 import 'solidity-coverage';
 import type { HardhatUserConfig } from 'hardhat/config';
 
-/*
-import * as path from 'path';
-import { TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS } from 'hardhat/builtin-tasks/task-names';
-
-subtask(
-  TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS,
-  async (_, { config }, runSuper) => {
-    const paths = await runSuper();
-
-    return paths.filter((solidityFilePath) => {
-      const relativePath = path.relative(
-        config.paths.sources,
-        solidityFilePath,
-      );
-
-      return relativePath === 'Exchange.sol';
-    });
-  },
-);
-*/
-
 dotenv.config();
 
 // You need to export an object to set up your config
@@ -38,8 +17,6 @@ const SOLC_VERSION = '0.8.18';
 
 const SOLC_VERSION_LAYERZERO = '0.8.25';
 
-// Solidity coverage tool does not support the viaIR compiler option
-// https://github.com/sc-forks/solidity-coverage/issues/715
 const solidity = {
   compilers: [
     {
