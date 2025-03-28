@@ -8,7 +8,7 @@ import { ILayerZeroComposer } from "@layerzerolabs/lz-evm-protocol-v2/contracts/
 import { OFTComposeMsgCodec } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/libs/OFTComposeMsgCodec.sol";
 import { IOFT, MessagingFee, OFTReceipt, SendParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
 
-import { GasFeeEstimation } from "./GasFeeEstimation.sol";
+import { LayerZeroFeeEstimation } from "./LayerZeroFeeEstimation.sol";
 
 interface ICustodian {
   function exchange() external view returns (address);
@@ -275,7 +275,7 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
     )
   {
     return
-      GasFeeEstimation.loadEstimatedForwardedQuantityInAssetUnits(
+      LayerZeroFeeEstimation.loadEstimatedDeliveredQuantityInAssetUnits(
         destinationEndpointId,
         minimumWithdrawQuantityMultiplier,
         oft,
@@ -292,7 +292,7 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
     uint32[] calldata destinationEndpointIds
   ) public view returns (uint256[] memory gasFeesInAssetUnits) {
     return
-      GasFeeEstimation.loadGasFeesInAssetUnits(
+      LayerZeroFeeEstimation.loadGasFeesInAssetUnits(
         bytes(""),
         destinationEndpointIds,
         minimumWithdrawQuantityMultiplier,

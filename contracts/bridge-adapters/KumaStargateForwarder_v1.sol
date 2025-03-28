@@ -11,7 +11,7 @@ import { Ownable2Step } from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import { IOFT } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
 import { KumaStargateForwarderComposing } from "./KumaStargateForwarderComposing.sol";
 
-import { GasFeeEstimation } from "./GasFeeEstimation.sol";
+import { LayerZeroFeeEstimation } from "./LayerZeroFeeEstimation.sol";
 
 // https://github.com/LayerZero-Labs/LayerZero-v2/blob/1fde89479fdc68b1a54cda7f19efa84483fcacc4/oapp/contracts/oft/interfaces/IOFT.sol
 // https://github.com/stargate-protocol/stargate-v2/blob/main/packages/stg-evm-v2/src/interfaces/IStargate.sol#L22
@@ -176,22 +176,21 @@ contract KumaStargateForwarder_v1 is ILayerZeroComposer, Ownable2Step {
    * @dev quantity is in pips since this function is used in conjunction with the off-chain SDK and REST API
    */
   function loadEstimatedForwardedQuantityInAssetUnits(
-    bool isDeposit,
     uint32 destinationEndpointId,
     uint64 quantity
   )
     public
     view
     returns (
-      uint256 estimatedWithdrawQuantityInAssetUnits,
-      uint256 minimumWithdrawQuantityInAssetUnits,
+      uint256 estimatedForwardedQuantityInAssetUnits,
+      uint256 minimumForwardedQuantityInAssetUnits,
       uint8 poolDecimals
     )
   {
-    IOFT oft = isDeposit ? xchainOFT : stargate;
+    IOFT oft = destinationEndpointId == xchainEndpointId ? xchainOFT : stargate;
 
     return
-      GasFeeEstimation.loadEstimatedForwardedQuantityInAssetUnits(
+      LayerZeroFeeEstimation.loadEstimatedDeliveredQuantityInAssetUnits(
         destinationEndpointId,
         minimumForwardQuantityMultiplier,
         oft,
@@ -200,25 +199,36 @@ contract KumaStargateForwarder_v1 is ILayerZeroComposer, Ownable2Step {
   }
 
   /**
+   * @notice Load current gas fee for depositing to XCHAIN
+   */
+  function loadDepositGasFeeInAssetUnits() public view returns (uint256 gasFeeInAssetUnits) {
+    uint32[] memory destinationEndpointIds = new uint32[](1);
+    destinationEndpointIds[0] = xchainEndpointId;
+
+    return
+      LayerZeroFeeEstimation.loadGasFeesInAssetUnits(
+        // Deposits include an enforced gas fee for composing on the XCHAIN bridge adapter
+        abi.encode(xchainEndpointId, address(this)),
+        destinationEndpointIds,
+        minimumForwardQuantityMultiplier,
+        xchainOFT
+      )[0];
+  }
+
+  /**
    * @notice Load current gas fee for each target endpoint ID specified in argument array
    *
    * @param destinationEndpointIds An array of LayerZero Endpoint IDs
    */
-  function loadGasFeesInAssetUnits(
-    bool isDeposit,
+  function loadWithdrawalGasFeesInAssetUnits(
     uint32[] calldata destinationEndpointIds
   ) public view returns (uint256[] memory gasFeesInAssetUnits) {
-    (bytes memory composeMsg, IOFT oft) = isDeposit
-      ? // Deposits include an enforced gas fee for composing on the XCHAIN bridge adapter
-      (abi.encode(xchainEndpointId, address(this)), xchainOFT)
-      : (bytes(""), stargate);
-
     return
-      GasFeeEstimation.loadGasFeesInAssetUnits(
-        composeMsg,
+      LayerZeroFeeEstimation.loadGasFeesInAssetUnits(
+        bytes(""),
         destinationEndpointIds,
         minimumForwardQuantityMultiplier,
-        oft
+        stargate
       );
   }
 }

@@ -5,7 +5,7 @@ pragma solidity 0.8.25;
 import { OFTComposeMsgCodec } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/libs/OFTComposeMsgCodec.sol";
 import { IOFT, OFTReceipt, MessagingFee, SendParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
 
-library GasFeeEstimation {
+library LayerZeroFeeEstimation {
   // To convert integer pips to a fractional price shift decimal left by the pip precision of 8
   // decimals places
   uint64 public constant PIP_PRICE_MULTIPLIER = 10 ** 8;
@@ -15,7 +15,7 @@ library GasFeeEstimation {
    *
    * @dev quantity is in pips since this function is used in conjunction with the off-chain SDK and REST API
    */
-  function loadEstimatedForwardedQuantityInAssetUnits(
+  function loadEstimatedDeliveredQuantityInAssetUnits(
     uint32 destinationEndpointId,
     uint64 minimumQuantityMultiplier,
     IOFT oft,
@@ -23,11 +23,7 @@ library GasFeeEstimation {
   )
     internal
     view
-    returns (
-      uint256 estimatedWithdrawQuantityInAssetUnits,
-      uint256 minimumWithdrawQuantityInAssetUnits,
-      uint8 poolDecimals
-    )
+    returns (uint256 estimatedDeliveredQuantityInAssetUnits, uint256 minimumDeliveredInAssetUnits, uint8 poolDecimals)
   {
     uint256 quantityInAssetUnits = _pipsToAssetUnits(quantity, oft.sharedDecimals());
 
@@ -40,8 +36,8 @@ library GasFeeEstimation {
 
     (, , OFTReceipt memory receipt) = oft.quoteOFT(sendParam);
 
-    estimatedWithdrawQuantityInAssetUnits = receipt.amountReceivedLD;
-    minimumWithdrawQuantityInAssetUnits = (quantityInAssetUnits * minimumQuantityMultiplier) / PIP_PRICE_MULTIPLIER;
+    estimatedDeliveredQuantityInAssetUnits = receipt.amountReceivedLD;
+    minimumDeliveredInAssetUnits = (quantityInAssetUnits * minimumQuantityMultiplier) / PIP_PRICE_MULTIPLIER;
     poolDecimals = oft.sharedDecimals();
   }
 
@@ -52,7 +48,7 @@ library GasFeeEstimation {
    */
   function loadGasFeesInAssetUnits(
     bytes memory composeMsg,
-    uint32[] calldata destinationEndpointIds,
+    uint32[] memory destinationEndpointIds,
     uint64 minimumQuantityMultiplier,
     IOFT oft
   ) internal view returns (uint256[] memory gasFeesInAssetUnits) {
