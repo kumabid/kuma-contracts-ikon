@@ -1114,6 +1114,7 @@ __metadata:
     "@commitlint/config-conventional": "npm:^17.7.0"
     "@eslint/eslintrc": "npm:^3.0.2"
     "@eslint/js": "npm:^8.57.0"
+    "@layerzerolabs/lz-evm-messagelib-v2": "npm:^3.0.80"
     "@layerzerolabs/lz-evm-oapp-v2": "npm:^2.3.3"
     "@layerzerolabs/lz-evm-protocol-v2": "npm:^2.3.3"
     "@nomicfoundation/hardhat-chai-matchers": "npm:2.0.2"
@@ -1158,6 +1159,7 @@ __metadata:
     prettier: "npm:^2.8.0"
     prettier-plugin-solidity: "npm:^1.0.0"
     solhint: "npm:^3.3.7"
+    solidity-bytes-utils: "npm:0.8.3"
     solidity-coverage: "npm:^0.8.12"
     ts-node: "npm:^10.9.1"
     typechain: "npm:8.3.2"
@@ -1166,6 +1168,27 @@ __metadata:
     uuid: "npm:8.3.2"
   languageName: unknown
   linkType: soft
+
+"@layerzerolabs/lz-evm-messagelib-v2@npm:^3.0.80":
+  version: 3.0.80
+  resolution: "@layerzerolabs/lz-evm-messagelib-v2@npm:3.0.80"
+  peerDependencies:
+    "@arbitrum/nitro-contracts": ^1.1.0
+    "@axelar-network/axelar-gmp-sdk-solidity": ^5.6.4
+    "@chainlink/contracts-ccip": ^0.7.6
+    "@eth-optimism/contracts": ^0.6.0
+    "@layerzerolabs/lz-evm-protocol-v2": ^3.0.80
+    "@layerzerolabs/lz-evm-v1-0.7": ^3.0.80
+    "@openzeppelin/contracts": ^4.8.1 || ^5.0.0
+    "@openzeppelin/contracts-upgradeable": ^4.8.1 || ^5.0.0
+    hardhat-deploy: ^0.12.4
+    solidity-bytes-utils: ^0.8.0
+  peerDependenciesMeta:
+    "@arbitrum/nitro-contracts":
+      optional: true
+  checksum: 10c0/2a93cf599e3b022fffe5345ea6f48538d7ad15ae0f4010fb9fd45f47976b4af2670dd42f22bf368d93e93a90cd132458e7d24d1fa9c52960a555b3924798e338
+  languageName: node
+  linkType: hard
 
 "@layerzerolabs/lz-evm-oapp-v2@npm:^2.3.3":
   version: 2.3.3
@@ -1790,10 +1813,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@solidity-parser/parser@npm:^0.18.0":
-  version: 0.18.0
-  resolution: "@solidity-parser/parser@npm:0.18.0"
-  checksum: 10c0/c54b4c9ba10e1fd1cd45894040135a39b9bc527f0ac40bec732d8628b0c0c7cb7ec2b7e816b408d613ab1d71c04f9555111ccc83b6dbaed2e39ff4ef7d000e25
+"@solidity-parser/parser@npm:^0.19.0":
+  version: 0.19.0
+  resolution: "@solidity-parser/parser@npm:0.19.0"
+  checksum: 10c0/2f4c885bb32ca95ea41120f0d972437b4191d26aa63ea62b7904d075e1b90f4290996407ef84a46a20f66e4268f41fb07fc0edc7142afc443511e8c74b37c6e9
   languageName: node
   linkType: hard
 
@@ -8767,6 +8790,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"solidity-bytes-utils@npm:0.8.3":
+  version: 0.8.3
+  resolution: "solidity-bytes-utils@npm:0.8.3"
+  checksum: 10c0/151a8e201faf5c0514959b2b67c89c821975b1c55484f4a76e9663e60f565e04295693cbb4e743e6f25184273144ef7d5646e60b6ce6d92af49c57565938c4af
+  languageName: node
+  linkType: hard
+
 "solidity-comments-extractor@npm:^0.0.7":
   version: 0.0.7
   resolution: "solidity-comments-extractor@npm:0.0.7"
@@ -8775,11 +8805,11 @@ __metadata:
   linkType: hard
 
 "solidity-coverage@npm:^0.8.12":
-  version: 0.8.12
-  resolution: "solidity-coverage@npm:0.8.12"
+  version: 0.8.14
+  resolution: "solidity-coverage@npm:0.8.14"
   dependencies:
     "@ethersproject/abi": "npm:^5.0.9"
-    "@solidity-parser/parser": "npm:^0.18.0"
+    "@solidity-parser/parser": "npm:^0.19.0"
     chalk: "npm:^2.4.2"
     death: "npm:^1.1.0"
     difflib: "npm:^0.2.4"
@@ -8801,7 +8831,7 @@ __metadata:
     hardhat: ^2.11.0
   bin:
     solidity-coverage: plugins/bin.js
-  checksum: 10c0/500de00ca5d0ff9531bcfc54040591e90bb281714c5ad810bc6aa77bb6ab696f15a141f6bcb1a47547dca68d10e717e1705741d4cf660d7dce8700fa97e6bfaf
+  checksum: 10c0/7a971d3c5bee6aff341188720a72c7544521c1afbde36593e4933ba230d46530ece1db8e6394d6283a13918fd7f05ab37a0d75e6a0a52d965a2fdff672d3a7a6
   languageName: node
   linkType: hard
 

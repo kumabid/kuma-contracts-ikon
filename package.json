@@ -1,6 +1,6 @@
 {
   "name": "@kumabid/kuma-contracts-ikon",
-  "version": "1.0.0-sandbox.2",
+  "version": "1.0.0-sandbox-P9-5643-stargate-forwarder-review-1-integration.1",
   "description": "Collects source code, tests, and documentation for the Kuma Ikon release Solidity contracts",
   "homepage": "https://github.com/kumabid/kuma-contracts-ikon",
   "repository": "https://github.com/kumabid/kuma-contracts-ikon",
@@ -11,6 +11,7 @@
     "lib": "build/lib"
   },
   "files": [
+    "artifacts/contracts/bridge-adapters/GasFeeEstimation.sol/GasFeeEstimation.json",
     "artifacts/contracts/libraries/ClosureDeleveraging.sol/ClosureDeleveraging.json",
     "artifacts/contracts/libraries/Depositing.sol/Depositing.json",
     "artifacts/contracts/libraries/Funding.sol/Funding.json",
@@ -41,9 +42,11 @@
     "test": "COVERAGE=1 hardhat test"
   },
   "dependencies": {
+    "@layerzerolabs/lz-evm-messagelib-v2": "^3.0.80",
     "@layerzerolabs/lz-evm-oapp-v2": "^2.3.3",
     "@layerzerolabs/lz-evm-protocol-v2": "^2.3.3",
     "ethers": "6.9.0",
+    "solidity-bytes-utils": "0.8.3",
     "uuid": "8.3.2"
   },
   "devDependencies": {
