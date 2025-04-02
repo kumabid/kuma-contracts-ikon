@@ -84,8 +84,8 @@ abstract contract Owned {
 }
 
 contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
-  // Address of Custodian contract
-  ICustodian public immutable custodian;
+  // Address of Exchange contract
+  IExchange public immutable exchange;
   // Must be true or `lzCompose` will revert
   bool public isDepositEnabled;
   // Must be true or `withdrawQuoteAsset` will revert
@@ -110,7 +110,7 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
   event WithdrawQuoteAssetFailed(address destinationWallet, uint256 quantity, bytes payload, bytes errorData);
 
   modifier onlyExchange() {
-    require(msg.sender == address(custodian.exchange()), "Caller must be Exchange contract");
+    require(msg.sender == address(exchange), "Caller must be Exchange contract");
     _;
   }
 
@@ -118,14 +118,14 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
    * @notice Instantiate a new `ExchangeLayerZeroAdapter` contract
    */
   constructor(
-    address custodian_,
+    address exchange_,
     uint64 minimumWithdrawQuantityMultiplier_,
     address lzEndpoint_,
     address oft_,
     address quoteAsset_
   ) Owned() {
-    require(Address.isContract(custodian_), "Invalid Custodian address");
-    custodian = ICustodian(custodian_);
+    require(Address.isContract(exchange_), "Invalid Exchange address");
+    exchange = IExchange(exchange_);
 
     minimumWithdrawQuantityMultiplier = minimumWithdrawQuantityMultiplier_;
 
@@ -139,7 +139,7 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
     require(oft.token() == quoteAsset_, "Quote asset address does not match OFT");
     quoteAsset = IERC20(quoteAsset_);
 
-    IERC20(quoteAsset).approve(custodian.exchange(), type(uint256).max);
+    IERC20(quoteAsset).approve(exchange_, type(uint256).max);
     IERC20(quoteAsset).approve(oft_, type(uint256).max);
   }
 
@@ -191,7 +191,7 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
       IERC20(quoteAsset).transfer(adminWallet, amountLD);
       emit LzComposeFailed(destinationWallet, amountLD, "Invalid destination wallet");
     } else {
-      try IExchange(custodian.exchange()).deposit(amountLD, destinationWallet) {
+      try exchange.deposit(amountLD, destinationWallet) {
         emit LzComposeSucceeded(
           sourceEndpointId,
           OFTComposeMsgCodec.bytes32ToAddress(OFTComposeMsgCodec.composeFrom(_message)),
@@ -228,7 +228,7 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
       bytes memory errorData
     ) {
       // If the swap fails, redeposit funds into Exchange so wallet can retry
-      IExchange(custodian.exchange()).deposit(quantity, destinationWallet);
+      exchange.deposit(quantity, destinationWallet);
       emit WithdrawQuoteAssetFailed(destinationWallet, quantity, payload, errorData);
     }
   }

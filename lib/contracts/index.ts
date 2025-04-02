@@ -8,6 +8,7 @@ import CustodianContract from './CustodianContract';
 import EarningsEscrowContract from './EarningsEscrow';
 import ExchangeContract from './ExchangeContract';
 import ExchangeLayerZeroAdapterContract from './ExchangeLayerZeroAdapterContract';
+import ExchangeLayerZeroAdapterV2Contract from './ExchangeLayerZeroAdapterV2Contract';
 import ExchangeWalletStateAggregatorContract from './ExchangeWalletStateAggregatorContract';
 import GovernanceContract from './GovernanceContract';
 import KumaIndexAndOraclePriceAdapterContract from './KumaIndexAndOraclePriceAdapterContract';
@@ -25,6 +26,7 @@ export {
   EarningsEscrowContract,
   ExchangeContract,
   ExchangeLayerZeroAdapterContract,
+  ExchangeLayerZeroAdapterV2Contract,
   ExchangeWalletStateAggregatorContract,
   GovernanceContract,
   KumaIndexAndOraclePriceAdapterContract,
