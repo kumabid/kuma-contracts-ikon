@@ -12,6 +12,7 @@ import ExchangeLayerZeroAdapterV2Contract from './ExchangeLayerZeroAdapterV2Cont
 import ExchangeWalletStateAggregatorContract from './ExchangeWalletStateAggregatorContract';
 import GovernanceContract from './GovernanceContract';
 import KumaIndexAndOraclePriceAdapterContract from './KumaIndexAndOraclePriceAdapterContract';
+import KumaStargateForwarderV1Contract from './KumaStargateForwarderV1Contract';
 import PythIndexPriceAdapterContract from './PythIndexPriceAdapterContract';
 import PythOraclePriceAdapterContract from './PythOraclePriceAdapterContract';
 import StorkIndexAndOraclePriceAdapterContract from './StorkIndexAndOraclePriceAdapterContract';
@@ -30,6 +31,7 @@ export {
   ExchangeWalletStateAggregatorContract,
   GovernanceContract,
   KumaIndexAndOraclePriceAdapterContract,
+  KumaStargateForwarderV1Contract,
   PythIndexPriceAdapterContract,
   PythOraclePriceAdapterContract,
   StorkIndexAndOraclePriceAdapterContract,

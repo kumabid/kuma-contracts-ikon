@@ -8,6 +8,7 @@ import { ILayerZeroComposer } from "@layerzerolabs/lz-evm-protocol-v2/contracts/
 import { OFTComposeMsgCodec } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/libs/OFTComposeMsgCodec.sol";
 import { IOFT, MessagingFee, OFTReceipt, SendParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
 
+import { KumaStargateForwarderComposing } from "./KumaStargateForwarderComposing.sol";
 import { LayerZeroFeeEstimation } from "./LayerZeroFeeEstimation.sol";
 
 interface ICustodian {
@@ -84,6 +85,8 @@ abstract contract Owned {
 }
 
 contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
+  // LayerZero endpoint ID for Berachain
+  uint32 berachainEndpointId;
   // Address of Exchange contract
   IExchange public immutable exchange;
   // Must be true or `lzCompose` will revert
@@ -96,6 +99,8 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
   uint64 public minimumWithdrawQuantityMultiplier;
   // Address of ERC-20 contract used as collateral and quote for all markets
   IERC20 public immutable quoteAsset;
+  // Address of the Stargate Forwarder contract on Berachain
+  address public stargateForwarder;
   // Local OFT contract used to send tokens by `withdrawQuoteAsset`
   IOFT public immutable oft;
 
@@ -118,22 +123,25 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
    * @notice Instantiate a new `ExchangeLayerZeroAdapter` contract
    */
   constructor(
+    uint32 berachainEndpointId_,
     address exchange_,
-    uint64 minimumWithdrawQuantityMultiplier_,
     address lzEndpoint_,
+    uint64 minimumWithdrawQuantityMultiplier_,
     address oft_,
     address quoteAsset_
   ) Owned() {
+    berachainEndpointId = berachainEndpointId_;
+
     require(Address.isContract(exchange_), "Invalid Exchange address");
     exchange = IExchange(exchange_);
+
+    require(Address.isContract(lzEndpoint_), "Invalid LZ Endpoint address");
+    lzEndpoint = lzEndpoint_;
 
     minimumWithdrawQuantityMultiplier = minimumWithdrawQuantityMultiplier_;
 
     require(Address.isContract(oft_), "Invalid OFT address");
     oft = IOFT(oft_);
-
-    require(Address.isContract(lzEndpoint_), "Invalid LZ Endpoint address");
-    lzEndpoint = lzEndpoint_;
 
     require(Address.isContract(quoteAsset_), "Invalid quote asset address");
     require(oft.token() == quoteAsset_, "Quote asset address does not match OFT");
@@ -203,6 +211,16 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
         emit LzComposeFailed(destinationWallet, amountLD, errorData);
       }
     }
+  }
+
+  /**
+   * @notice Set the address of the Stargate Forwarder contract. Can only be called once
+   */
+  function setStargateForwarder(address stargateForwarder_) public onlyAdmin {
+    require(stargateForwarder == address(0x0), "Stargate Forwarder can only be set once");
+    // We cannot check that the address is a contract since it resides on a remote chain
+
+    stargateForwarder = stargateForwarder_;
   }
 
   /**
@@ -307,15 +325,31 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
   ) private view returns (SendParam memory) {
     uint32 destinationEndpointId = abi.decode(payload, (uint32));
 
+    if (destinationEndpointId == berachainEndpointId) {
+      return
+        // https://docs.layerzero.network/v2/developers/evm/oft/quickstart#estimating-gas-fees
+        SendParam({
+          dstEid: berachainEndpointId,
+          to: OFTComposeMsgCodec.addressToBytes32(destinationWallet),
+          amountLD: quantityInAssetUnits,
+          minAmountLD: (quantityInAssetUnits * minimumWithdrawQuantityMultiplier) / PIP_PRICE_MULTIPLIER,
+          extraOptions: bytes(""),
+          composeMsg: bytes(""),
+          oftCmd: bytes("") // Taxi mode
+        });
+    }
+
     return
-      // https://docs.layerzero.network/v2/developers/evm/oft/quickstart#estimating-gas-fees
       SendParam({
-        dstEid: destinationEndpointId,
-        to: OFTComposeMsgCodec.addressToBytes32(destinationWallet),
+        dstEid: berachainEndpointId,
+        to: OFTComposeMsgCodec.addressToBytes32(stargateForwarder),
         amountLD: quantityInAssetUnits,
         minAmountLD: (quantityInAssetUnits * minimumWithdrawQuantityMultiplier) / PIP_PRICE_MULTIPLIER,
         extraOptions: bytes(""),
-        composeMsg: bytes(""),
+        composeMsg: abi.encode(
+          KumaStargateForwarderComposing.ComposeMessageType.WithdrawFromXchain,
+          KumaStargateForwarderComposing.WithdrawFromXchain(destinationEndpointId, destinationWallet)
+        ),
         oftCmd: bytes("") // Taxi mode
       });
   }
