@@ -86,7 +86,7 @@ abstract contract Owned {
 
 contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
   // LayerZero endpoint ID for Berachain
-  uint32 berachainEndpointId;
+  uint32 public berachainEndpointId;
   // Address of Exchange contract
   IExchange public immutable exchange;
   // Must be true or `lzCompose` will revert
@@ -302,20 +302,31 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
   }
 
   /**
-   * @notice Load current gas fee for each target endpoint ID specified in argument array
+   * @notice Load current gas fee for withdrawing to Berachain
    *
-   * @param destinationEndpointIds An array of destination LayerZero Endpoint IDs
+   * @param isWithdrawingToStargateForwarder If true, the gas fee will include composing with the Stargate Forwarder
    */
-  function loadGasFeesInAssetUnits(
-    uint32[] calldata destinationEndpointIds
-  ) public view returns (uint256[] memory gasFeesInAssetUnits) {
+  function loadBerachainWithdrawalGasFeeInAssetUnits(
+    bool isWithdrawingToStargateForwarder
+  ) public view returns (uint256 gasFeesInAssetUnit) {
+    bytes memory composeMsg = isWithdrawingToStargateForwarder
+      ? abi.encode(
+        KumaStargateForwarderComposing.ComposeMessageType.WithdrawFromXchain,
+        // The encoded destination endpoint and wallet values do not matter for estimation purposes
+        KumaStargateForwarderComposing.WithdrawFromXchain(berachainEndpointId, address(this))
+      )
+      : bytes("");
+
+    uint32[] memory destinationEndpointIds = new uint32[](1);
+    destinationEndpointIds[0] = berachainEndpointId;
+
     return
       LayerZeroFeeEstimation.loadGasFeesInAssetUnits(
-        bytes(""),
+        composeMsg,
         destinationEndpointIds,
         minimumWithdrawQuantityMultiplier,
         oft
-      );
+      )[0];
   }
 
   function _getSendParamForWithdraw(
