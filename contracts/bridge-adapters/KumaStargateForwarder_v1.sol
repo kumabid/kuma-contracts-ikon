@@ -68,8 +68,8 @@ contract KumaStargateForwarder_v1 is ILayerZeroComposer, Ownable2Step {
     require(Address.isContract(lzEndpoint_), "Invalid LZ Endpoint address");
     lzEndpoint = lzEndpoint_;
 
-    minimumForwardQuantityMultiplier = minimumForwardQuantityMultiplier_;
-    minimumDepositNativeDropQuantityMultiplier = minimumDepositNativeDropQuantityMultiplier_;
+    setMinimumDepositNativeDropQuantityMultiplier(minimumDepositNativeDropQuantityMultiplier_);
+    setMinimumForwardQuantityMultiplier(minimumForwardQuantityMultiplier_);
 
     require(Address.isContract(xchainOFT_), "Invalid OFT address");
     xchainOFT = IOFT(xchainOFT_);
@@ -140,8 +140,8 @@ contract KumaStargateForwarder_v1 is ILayerZeroComposer, Ownable2Step {
     uint64 newMinimumDepositNativeDropQuantityMultiplier
   ) public onlyOwner {
     require(
-      minimumDepositNativeDropQuantityMultiplier >= MIN_MULTIPLIER &&
-        minimumDepositNativeDropQuantityMultiplier <= MAX_MULTIPLIER,
+      newMinimumDepositNativeDropQuantityMultiplier >= MIN_MULTIPLIER &&
+        newMinimumDepositNativeDropQuantityMultiplier <= MAX_MULTIPLIER,
       "Value out of bounds"
     );
 
@@ -154,7 +154,7 @@ contract KumaStargateForwarder_v1 is ILayerZeroComposer, Ownable2Step {
    * @param newMinimumForwardQuantityMultiplier the tolerance for the minimum token quantity delivered on the remote
    * chain after slippage as a multiplier in pips of the local quantity sent
    */
-  function setMinimumWithdrawQuantityMultiplier(uint64 newMinimumForwardQuantityMultiplier) public onlyOwner {
+  function setMinimumForwardQuantityMultiplier(uint64 newMinimumForwardQuantityMultiplier) public onlyOwner {
     require(
       newMinimumForwardQuantityMultiplier >= MIN_MULTIPLIER && newMinimumForwardQuantityMultiplier <= MAX_MULTIPLIER,
       "Value out of bounds"
@@ -225,7 +225,7 @@ contract KumaStargateForwarder_v1 is ILayerZeroComposer, Ownable2Step {
   ) public view returns (uint256[] memory gasFeesInAssetUnits) {
     return
       LayerZeroFeeEstimation.loadGasFeesInAssetUnits(
-        bytes(""),
+        bytes(""), // Compose not supported for withdrawals
         destinationEndpointIds,
         minimumForwardQuantityMultiplier,
         stargate

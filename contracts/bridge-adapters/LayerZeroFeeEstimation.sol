@@ -25,20 +25,19 @@ library LayerZeroFeeEstimation {
     view
     returns (uint256 estimatedDeliveredQuantityInAssetUnits, uint256 minimumDeliveredInAssetUnits, uint8 poolDecimals)
   {
-    uint256 quantityInAssetUnits = _pipsToAssetUnits(quantity, oft.sharedDecimals());
+    poolDecimals = oft.sharedDecimals();
 
+    uint256 quantityInAssetUnits = _pipsToAssetUnits(quantity, poolDecimals);
     SendParam memory sendParam = _getSendParamForEstimation(
       bytes(""), // The compose message does not affect pool slippage
       destinationEndpointId,
       minimumQuantityMultiplier,
       quantityInAssetUnits
     );
-
     (, , OFTReceipt memory receipt) = oft.quoteOFT(sendParam);
 
     estimatedDeliveredQuantityInAssetUnits = receipt.amountReceivedLD;
     minimumDeliveredInAssetUnits = (quantityInAssetUnits * minimumQuantityMultiplier) / PIP_PRICE_MULTIPLIER;
-    poolDecimals = oft.sharedDecimals();
   }
 
   /**
@@ -54,7 +53,7 @@ library LayerZeroFeeEstimation {
   ) internal view returns (uint256[] memory gasFeesInAssetUnits) {
     gasFeesInAssetUnits = new uint256[](destinationEndpointIds.length);
 
-    for (uint256 i = 0; i < destinationEndpointIds.length; ++i) {
+    for (uint256 i = 0; i < destinationEndpointIds.length; i++) {
       SendParam memory sendParam = _getSendParamForEstimation(
         composeMsg,
         destinationEndpointIds[i],
