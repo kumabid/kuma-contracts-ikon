@@ -17,6 +17,7 @@ interface IExchange {
   function deposit(uint256 quantityInAssetUnits, address destinationWallet) external;
 }
 
+// solhint-disable-next-line contract-name-camelcase
 contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Ownable2Step {
   // LayerZero endpoint ID for Berachain
   uint32 public immutable berachainEndpointId;

@@ -71,7 +71,7 @@ library LayerZeroFeeEstimation {
     uint32 destinationEndpointId,
     uint64 minimumQuantityMultiplier,
     uint256 quantityInAssetUnits
-  ) internal view returns (SendParam memory) {
+  ) private view returns (SendParam memory) {
     return
       // https://docs.layerzero.network/v2/developers/evm/oft/quickstart#estimating-gas-fees
       SendParam({

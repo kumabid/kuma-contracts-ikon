@@ -21,6 +21,7 @@ interface IStargate is IOFT {
 
 }
 
+// solhint-disable-next-line contract-name-camelcase
 contract KumaStargateForwarder_v1 is ILayerZeroComposer, Ownable2Step {
   // 99.999999%
   uint64 public constant MAX_MULTIPLIER = 99999999;
