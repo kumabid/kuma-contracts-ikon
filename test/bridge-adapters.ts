@@ -453,16 +453,27 @@ describe('bridge-adapters', function () {
         await ethers.getContractFactory('StargateV2PoolMock')
       ).deploy(sendFee, await usdc.getAddress());
 
+      const kumaStargateForwarderComposing = await (
+        await (
+          await ethers.getContractFactory('KumaStargateForwarderComposing')
+        ).deploy()
+      ).waitForDeployment();
       forwarder = await (
-        await ethers.getContractFactory('KumaStargateForwarder_v1')
+        await ethers.getContractFactory('KumaStargateForwarder_v1', {
+          libraries: {
+            KumaStargateForwarderComposing:
+              await kumaStargateForwarderComposing.getAddress(),
+          },
+        })
       ).deploy(
-        decimalToPips('0.99900000'),
-        decimalToPips('0.80000000'),
         stargatePoolMock.getAddress(),
         await stargatePoolMock.getAddress(),
+        decimalToPips('0.99900000'),
+        decimalToPips('0.80000000'),
         await stargatePoolMock.getAddress(),
         await stargatePoolMock.getAddress(),
         await usdc.getAddress(),
+        3,
       );
 
       const wallets = await ethers.getSigners();
