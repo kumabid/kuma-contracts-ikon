@@ -10,17 +10,30 @@ async function main() {
     ),
   );
 
+  const KumaStargateForwarderComposingFactory = (
+    await ethers.getContractFactory('KumaStargateForwarderComposing')
+  ).connect(deployWallet);
+  const kumaStargateForwarderComposing =
+    await KumaStargateForwarderComposingFactory.deploy();
+  await kumaStargateForwarderComposing.waitForDeployment(1);
+
   const KumaStargateForwarderFactory = (
-    await ethers.getContractFactory('KumaStargateForwarder_v1')
+    await ethers.getContractFactory('KumaStargateForwarder_v1', {
+      libraries: {
+        KumaStargateForwarderComposing:
+          await kumaStargateForwarderComposing.getAddress(),
+      },
+    })
   ).connect(deployWallet);
   const forwarder = await KumaStargateForwarderFactory.deploy(
-    process.env.MINIMUM_FORWARD_QUANTITY_MULTIPLIER,
-    process.env.MINIMUM_DEPOSIT_NATIVE_DROP_QUANTITY_MULTIPLIER,
     process.env.EXCHANGE_LAYERZERO_ADAPTER,
     process.env.LZ_ENDPOINT,
+    process.env.MINIMUM_FORWARD_QUANTITY_MULTIPLIER,
+    process.env.MINIMUM_DEPOSIT_NATIVE_DROP_QUANTITY_MULTIPLIER,
     process.env.OFT,
     process.env.STARGATE,
     process.env.USDC,
+    process.env.XCHAIN_ENDPOINT_ID,
   );
 
   await forwarder.waitForDeployment();

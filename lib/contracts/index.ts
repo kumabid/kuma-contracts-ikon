@@ -8,9 +8,11 @@ import CustodianContract from './CustodianContract';
 import EarningsEscrowContract from './EarningsEscrow';
 import ExchangeContract from './ExchangeContract';
 import ExchangeLayerZeroAdapterContract from './ExchangeLayerZeroAdapterContract';
+import ExchangeLayerZeroAdapterV2Contract from './ExchangeLayerZeroAdapterV2Contract';
 import ExchangeWalletStateAggregatorContract from './ExchangeWalletStateAggregatorContract';
 import GovernanceContract from './GovernanceContract';
 import KumaIndexAndOraclePriceAdapterContract from './KumaIndexAndOraclePriceAdapterContract';
+import KumaStargateForwarderV1Contract from './KumaStargateForwarderV1Contract';
 import PythIndexPriceAdapterContract from './PythIndexPriceAdapterContract';
 import PythOraclePriceAdapterContract from './PythOraclePriceAdapterContract';
 import StorkIndexAndOraclePriceAdapterContract from './StorkIndexAndOraclePriceAdapterContract';
@@ -25,9 +27,11 @@ export {
   EarningsEscrowContract,
   ExchangeContract,
   ExchangeLayerZeroAdapterContract,
+  ExchangeLayerZeroAdapterV2Contract,
   ExchangeWalletStateAggregatorContract,
   GovernanceContract,
   KumaIndexAndOraclePriceAdapterContract,
+  KumaStargateForwarderV1Contract,
   PythIndexPriceAdapterContract,
   PythOraclePriceAdapterContract,
   StorkIndexAndOraclePriceAdapterContract,
