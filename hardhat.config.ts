@@ -17,39 +17,58 @@ const SOLC_VERSION = '0.8.18';
 
 const SOLC_VERSION_LAYERZERO = '0.8.25';
 
+// https://hardhat.org/hardhat-runner/docs/reference/solidity-support#support-for-ir-based-codegen
+const minimalOptimizerSettings = {
+  viaIR: true,
+  optimizer: {
+    enabled: true,
+    details: {
+      yulDetails: {
+        optimizerSteps: 'u',
+      },
+    },
+  },
+};
+
 const solidity = {
   compilers: [
     {
       version: SOLC_VERSION,
-      settings: {
-        optimizer: {
-          enabled: true,
-          runs: 1000000,
-        },
-        viaIR: true,
-      },
+      settings: !!process.env.COVERAGE
+        ? minimalOptimizerSettings
+        : {
+            optimizer: {
+              enabled: true,
+              runs: 1000000,
+            },
+            viaIR: true,
+          },
     },
     {
       version: SOLC_VERSION_LAYERZERO,
-      settings: {
-        optimizer: {
-          enabled: true,
-          runs: 1000000,
-        },
-        viaIR: true,
-      },
+      settings: !!process.env.COVERAGE
+        ? minimalOptimizerSettings
+        : {
+            optimizer: {
+              enabled: true,
+              runs: 1000000,
+            },
+            viaIR: true,
+          },
     },
   ],
   overrides: {
     'contracts/Exchange.sol': {
       version: SOLC_VERSION,
-      settings: {
-        optimizer: {
-          enabled: true,
-          runs: 100,
-        },
-        viaIR: true,
-      },
+      settings: !!process.env.COVERAGE
+        ? minimalOptimizerSettings
+        : {
+            optimizer: {
+              enabled: true,
+              runs: 100,
+            },
+            viaIR: true,
+          },
     },
   },
 };
