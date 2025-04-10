@@ -5,7 +5,6 @@ pragma solidity 0.8.25;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { OFTComposeMsgCodec } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/libs/OFTComposeMsgCodec.sol";
 import { IOFT, MessagingFee, SendParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
-import { ExchangeLayerZeroAdapter } from "./ExchangeLayerZeroAdapter.sol";
 
 library KumaStargateForwarderComposing {
   enum ComposeMessageType {

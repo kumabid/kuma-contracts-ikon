@@ -6,87 +6,21 @@ import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ILayerZeroComposer } from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroComposer.sol";
 import { OFTComposeMsgCodec } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/libs/OFTComposeMsgCodec.sol";
-import { IOFT, MessagingFee, OFTReceipt, SendParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { Ownable2Step } from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import { IOFT, MessagingFee, SendParam } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/interfaces/IOFT.sol";
 
 import { KumaStargateForwarderComposing } from "./KumaStargateForwarderComposing.sol";
 import { LayerZeroFeeEstimation } from "./LayerZeroFeeEstimation.sol";
-
-interface ICustodian {
-  function exchange() external view returns (address);
-}
 
 interface IExchange {
   function deposit(uint256 quantityInAssetUnits, address destinationWallet) external;
 }
 
-/*
- * @notice Mixin that provide separate owner and admin roles for RBAC
- * @dev Copied here from Owned.sol due to Solidity version mismatch
- */
-abstract contract Owned {
-  address public ownerWallet;
-  address public adminWallet;
-
-  modifier onlyOwner() {
-    require(msg.sender == ownerWallet, "Caller must be Owner wallet");
-    _;
-  }
-  modifier onlyAdmin() {
-    require(msg.sender == adminWallet, "Caller must be Admin wallet");
-    _;
-  }
-
-  /**
-   * @notice Sets both the owner and admin roles to the contract creator
-   */
-  constructor() {
-    ownerWallet = msg.sender;
-    adminWallet = msg.sender;
-  }
-
-  /**
-   * @notice Sets a new whitelisted admin wallet
-   *
-   * @param newAdmin The new whitelisted admin wallet. Must be different from the current one
-   */
-  function setAdmin(address newAdmin) external onlyOwner {
-    require(newAdmin != address(0x0), "Invalid wallet address");
-    require(newAdmin != adminWallet, "Must be different from current admin");
-
-    adminWallet = newAdmin;
-  }
-
-  /**
-   * @notice Sets a new owner wallet
-   *
-   * @param newOwner The new owner wallet. Must be different from the current one
-   */
-  function setOwner(address newOwner) external onlyOwner {
-    require(newOwner != address(0x0), "Invalid wallet address");
-    require(newOwner != ownerWallet, "Must be different from current owner");
-
-    ownerWallet = newOwner;
-  }
-
-  /**
-   * @notice Clears the currently whitelisted admin wallet, effectively disabling any functions requiring
-   * the admin role
-   */
-  function removeAdmin() external onlyOwner {
-    adminWallet = address(0x0);
-  }
-
-  /**
-   * @notice Permanently clears the owner wallet, effectively disabling any functions requiring the owner role
-   */
-  function removeOwner() external onlyOwner {
-    ownerWallet = address(0x0);
-  }
-}
-
-contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
+// solhint-disable-next-line contract-name-camelcase
+contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Ownable2Step {
   // LayerZero endpoint ID for Berachain
-  uint32 public berachainEndpointId;
+  uint32 public immutable berachainEndpointId;
   // Address of Exchange contract
   IExchange public immutable exchange;
   // Must be true or `lzCompose` will revert
@@ -129,7 +63,7 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
     uint64 minimumWithdrawQuantityMultiplier_,
     address oft_,
     address quoteAsset_
-  ) Owned() {
+  ) Ownable() {
     berachainEndpointId = berachainEndpointId_;
 
     require(Address.isContract(exchange_), "Invalid Exchange address");
@@ -183,21 +117,21 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
       (uint32, address)
     );
 
-    // Incoming bridge deposits consists of 2 separate transactions. The first calls lzReceive and
-    // mints tokens to the bridge contract. The second calls lzCompose which deposits the tokens
-    // into the Exchange. If lzCompose fails without transferring out the tokens, then the tokens
-    // could end up stuck in this contract as there is no way to directly transfer them out. To
-    // avoid this, if the deposit cannot be completed successfully for any reason then we transfer
-    // the tokens directly to the destination wallet so they can retry later
-    if (!isDepositEnabled) {
+    // If the provided destination wallet is invalid, then it is unclear where the tokens should
+    // go. Rather than have them stuck in this contract we transfer the tokens to the admin
+    // wallet so they can be appropriately disbursed manually
+    if (destinationWallet == address(0x0)) {
+      IERC20(quoteAsset).transfer(owner(), amountLD);
+      emit LzComposeFailed(destinationWallet, amountLD, "Invalid destination wallet");
+      // Incoming bridge deposits consists of 2 separate transactions. The first calls lzReceive and
+      // mints tokens to the bridge contract. The second calls lzCompose which deposits the tokens
+      // into the Exchange. If lzCompose fails without transferring out the tokens, then the tokens
+      // could end up stuck in this contract as there is no way to directly transfer them out. To
+      // avoid this, if the deposit cannot be completed successfully for any reason then we transfer
+      // the tokens directly to the destination wallet so they can retry later
+    } else if (!isDepositEnabled) {
       IERC20(quoteAsset).transfer(destinationWallet, amountLD);
       emit LzComposeFailed(destinationWallet, amountLD, "Deposits disabled");
-    } else if (destinationWallet == address(0x0)) {
-      // If the provided destination wallet is invalid, then it is unclear where the tokens should
-      // go. Rather than have them stuck in this contract we transfer the tokens to the admin
-      // wallet so they can be appropriately disbursed manually
-      IERC20(quoteAsset).transfer(adminWallet, amountLD);
-      emit LzComposeFailed(destinationWallet, amountLD, "Invalid destination wallet");
     } else {
       try exchange.deposit(amountLD, destinationWallet) {
         emit LzComposeSucceeded(
@@ -216,7 +150,7 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
   /**
    * @notice Set the address of the Stargate Forwarder contract. Can only be called once
    */
-  function setStargateForwarder(address stargateForwarder_) public onlyAdmin {
+  function setStargateForwarder(address stargateForwarder_) public onlyOwner {
     require(stargateForwarder == address(0x0), "Stargate Forwarder can only be set once");
     // We cannot check that the address is a contract since it resides on a remote chain
 
@@ -226,7 +160,7 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
   /**
    * @notice Allow Admin wallet to withdraw gas fee funding
    */
-  function withdrawNativeAsset(address payable destinationContractOrWallet, uint256 quantity) public onlyAdmin {
+  function withdrawNativeAsset(address payable destinationContractOrWallet, uint256 quantity) public onlyOwner {
     (bool success, ) = destinationContractOrWallet.call{ value: quantity }("");
     require(success, "Native asset transfer failed");
   }
@@ -254,7 +188,7 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
   /**
    * @notice Disable deposits
    */
-  function setDepositEnabled(bool isEnabled) public onlyAdmin {
+  function setDepositEnabled(bool isEnabled) public onlyOwner {
     isDepositEnabled = isEnabled;
   }
 
@@ -264,14 +198,14 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
    * @param newMinimumWithdrawQuantityMultiplier the tolerance for the minimum token quantity delivered on the
    * remote chain after slippage as a multiplier in pips of the local quantity sent
    */
-  function setMinimumWithdrawQuantityMultiplier(uint64 newMinimumWithdrawQuantityMultiplier) public onlyAdmin {
+  function setMinimumWithdrawQuantityMultiplier(uint64 newMinimumWithdrawQuantityMultiplier) public onlyOwner {
     minimumWithdrawQuantityMultiplier = newMinimumWithdrawQuantityMultiplier;
   }
 
   /**
    * @notice Disable withdrawals
    */
-  function setWithdrawEnabled(bool isEnabled) public onlyAdmin {
+  function setWithdrawEnabled(bool isEnabled) public onlyOwner {
     isWithdrawEnabled = isEnabled;
   }
 
@@ -313,7 +247,7 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
     destinationEndpointIds[0] = berachainEndpointId;
 
     gasFeeWithoutForwardInAssetUnits = LayerZeroFeeEstimation.loadGasFeesInAssetUnits(
-      bytes("0x"),
+      bytes("0x"), // Compose not supported for withdrawals
       destinationEndpointIds,
       minimumWithdrawQuantityMultiplier,
       oft
@@ -346,8 +280,8 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
           to: OFTComposeMsgCodec.addressToBytes32(destinationWallet),
           amountLD: quantityInAssetUnits,
           minAmountLD: (quantityInAssetUnits * minimumWithdrawQuantityMultiplier) / PIP_PRICE_MULTIPLIER,
-          extraOptions: bytes(""),
-          composeMsg: bytes(""),
+          extraOptions: bytes(""), // No extra native asset needed
+          composeMsg: bytes(""), // Compose not supported for withdrawals
           oftCmd: bytes("") // Taxi mode
         });
     }
@@ -359,7 +293,7 @@ contract ExchangeLayerZeroAdapter_v2 is ILayerZeroComposer, Owned {
         to: OFTComposeMsgCodec.addressToBytes32(stargateForwarder),
         amountLD: quantityInAssetUnits,
         minAmountLD: (quantityInAssetUnits * minimumWithdrawQuantityMultiplier) / PIP_PRICE_MULTIPLIER,
-        extraOptions: bytes(""),
+        extraOptions: bytes(""), // No extra native asset needed
         composeMsg: abi.encode(
           KumaStargateForwarderComposing.ComposeMessageType.WithdrawFromXchain,
           KumaStargateForwarderComposing.WithdrawFromXchain(destinationEndpointId, destinationWallet)
