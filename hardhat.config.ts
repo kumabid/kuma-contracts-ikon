@@ -100,7 +100,7 @@ const config: HardhatUserConfig = {
     },
     sepolia: {
       chainId: 11155111,
-      url: 'https://eth-sepolia.g.alchemy.com/v2/Mb9MWMHYaVtzPEzAmo_UCdUHdtRyrSvj',
+      url: 'https://sepolia.drpc.org',
     },
   },
   etherscan: {
@@ -108,7 +108,7 @@ const config: HardhatUserConfig = {
       cArtio: 'abc',
       xchain: 'abc',
       xchainTestnet: 'abc',
-      sepolia: 'KAMGRM9Z7P1I58TTEBCHI6J9K583QCFZRR',
+      sepolia: 'abc',
     },
     customChains: [
       {
