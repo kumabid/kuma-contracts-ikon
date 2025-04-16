@@ -41,9 +41,11 @@
     "test": "COVERAGE=1 hardhat test"
   },
   "dependencies": {
+    "@layerzerolabs/lz-evm-messagelib-v2": "^3.0.80",
     "@layerzerolabs/lz-evm-oapp-v2": "^2.3.3",
     "@layerzerolabs/lz-evm-protocol-v2": "^2.3.3",
     "ethers": "6.9.0",
+    "solidity-bytes-utils": "0.8.3",
     "uuid": "8.3.2"
   },
   "devDependencies": {
