@@ -150,6 +150,8 @@ library KumaStargateForwarderComposing {
       // native fees needed to bridge them to the destination chain
       usdc.transfer(destinationWallet, amountLD);
       emit ForwardFailed(destinationWallet, amountLD, composeMessage, "Invalid compose from");
+
+      return;
     }
 
     // https://docs.layerzero.network/v2/developers/evm/oft/quickstart#estimating-gas-fees
