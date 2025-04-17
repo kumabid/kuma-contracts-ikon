@@ -11,7 +11,7 @@ library Constants {
 
   string public constant EIP_712_DOMAIN_NAME = "Kuma";
 
-  string public constant EIP_712_DOMAIN_VERSION = "1.0.0";
+  string public constant EIP_712_DOMAIN_VERSION = "1.0.0-sandbox";
 
   // https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator
   bytes32 public constant EIP_712_TYPE_HASH_DOMAIN =
@@ -38,11 +38,11 @@ library Constants {
   bytes32 public constant DELEGATED_KEY_AUTHORIZATION_MESSAGE_HASH =
     keccak256("Sign this free message to prove you control this wallet");
 
-  // 1 week
-  uint256 public constant EXIT_FUND_WITHDRAW_DELAY_IN_S = 7 * 24 * 60 * 60;
+  // 1 hour
+  uint256 public constant EXIT_FUND_WITHDRAW_DELAY_IN_S = 1 * 60 * 60;
 
-  // 1 day
-  uint256 public constant FIELD_UPGRADE_DELAY_IN_S = 1 * 24 * 60 * 60;
+  // 5 minutes
+  uint256 public constant FIELD_UPGRADE_DELAY_IN_S = 5 * 60;
 
   // 8 hours
   uint64 public constant FUNDING_PERIOD_IN_MS = 8 * 60 * 60 * 1000;
