@@ -114,6 +114,8 @@ library KumaStargateForwarderComposing {
       // source chain to the destination wallet address on the local chain
       usdc.transfer(destinationWallet, amountLD);
       emit ForwardFailed(destinationWallet, amountLD, composeMessage, "Insufficient native drop");
+
+      return;
     }
 
     try xchainOFT.send{ value: messagingFee.nativeFee }(sendParam, messagingFee, payable(address(this))) {} catch (
