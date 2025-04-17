@@ -15,7 +15,7 @@ async function main() {
   ).connect(deployWallet);
   const kumaStargateForwarderComposing =
     await KumaStargateForwarderComposingFactory.deploy();
-  await kumaStargateForwarderComposing.waitForDeployment(1);
+  await kumaStargateForwarderComposing.waitForDeployment();
 
   const KumaStargateForwarderFactory = (
     await ethers.getContractFactory('KumaStargateForwarder_v1', {
