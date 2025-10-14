@@ -240,7 +240,7 @@ Ikon introduces a new method of order authorization with delegated keys. When us
 
 ## Cross-Chain Bridge Protocol Support
 
-In order to support seamless cross-chain [deposits](#deposit) and [withdrawals](#withdraw), Ikon includes an extensible set of adapter contracts for bridge protocol integration.
+In order to support seamless cross-chain [deposits](#deposit) and [withdrawals](#withdraw), Ikon includes an extensible set of adapter contracts for bridge protocol integration. The primary set of adapter contracts supports cross-chain activity via [LayerZero](https://layerzero.network/), including deposits and withdrawals for Arbitrum, Avalanche, Base, Berachain, BNB Chain, Ethereum, and Optimism.
 
 For deposits, adapters receive bridged funds and call Exchange’s `deposit` function with the provided destination wallet address. Only protocols that implement single transaction bridge-and-call functionality are supported.
 
